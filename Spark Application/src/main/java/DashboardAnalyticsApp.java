@@ -1,7 +1,5 @@
 
 import java.util.*;
-import java.util.function.DoubleFunction;
-
 import org.apache.spark.api.java.*;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
@@ -46,7 +44,9 @@ public class DashboardAnalyticsApp {
   private static final double tileSize = 500; // meters
 
 
+
   public static void main(String[] args) {
+    Config config = new Config();
 
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
     JavaSparkContext sc = new JavaSparkContext(conf);
@@ -55,14 +55,14 @@ public class DashboardAnalyticsApp {
 
     SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
     final Map options = new HashMap();
-    options.put("host", "192.168.1.131:27017");
-    options.put("database", "Noise");
-    options.put("collection", "Aggregates");
+    options.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    options.put("database", "DashboardAnalyticsDatabase");
+    options.put("collection", config.application + "_Aggregates");
 
     final Map options2 = new HashMap();
-    options2.put("host", "192.168.1.131:27017");
-    options2.put("database", "Noise");
-    options2.put("collection", "NoiseTiles");
+    options2.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    options2.put("database", "DashboardAnalyticsDatabase");
+    options2.put("collection", config.application + "_Tiles");
     options2.put("splitKey", "tileKey");
     options2.put("splitKeyType", "string");
 
@@ -98,7 +98,7 @@ public class DashboardAnalyticsApp {
     topicMap.put("noise", 2);
 
     JavaPairReceiverInputDStream<String, String> messages =
-            KafkaUtils.createStream(jssc, "192.168.1.131:2181", "group2", topicMap);
+            KafkaUtils.createStream(jssc, config.kafkaHost + ":" + config.kafkaPort, config.kafkaGroup, topicMap);
 
     JavaDStream<Double> samples = messages.map(new Function<Tuple2<String, String>, Double>() {
       @Override

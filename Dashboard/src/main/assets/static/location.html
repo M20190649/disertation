@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="css/external/style.css">
+    <title>My City Dashboard</title>
+
+    <script src="js/external/jquery.min.js"></script>
+    <script type="text/javascript" src="js/config.js"></script>
+    <script type="text/javascript" src="js/storage.js"></script>
+    <script type="text/javascript" src="js/LocationHelper.js"></script>
+    <script type="text/javascript" src="js/controllers/votingPeopleController.js"></script>
+    <script type="text/javascript" src="js/userProxy.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+
+    <!-- Optional: Include the jQuery library -->
+    <script src="js/external/jquery.min.js"></script>
+    <!-- Optional: Incorporate the Bootstrap JavaScript plugins -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link href="css/external/style.css" rel="stylesheet">
+
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+
+    <script>
+        user = $.parseJSON(storage.user);
+        place = $.parseJSON(storage.place); // place is a variable that is used for redirect :(
+
+        var userProxy = new UserProxy();
+
+        $(function() {
+            var request = $.ajax({
+                url: config.uri + "/locations/" + place.id,
+                type: "GET",
+                connection: "keep-alive",
+                headers: {"Authorization": config.accessToken},
+                contentType: "application/json",
+                dataType: "json",
+                cache: false,
+            });
+
+            request.done(function(returnedPlace) {
+                storage.place = JSON.stringify(returnedPlace);
+                place = returnedPlace;
+
+                $('#location_name').text(place.name);
+                $('#Rating').html(" " + place.votes);
+                $('#message').text(place.description);
+
+                userProxy.get(place.createdBy, function(user) {
+                    $('#initiator').text(user.firstName + " " + user.lastName);
+                });
+
+                $('#headername').text(user.firstName + " " + user.lastName);
+
+                if(place.image_url) {
+                    $("#locationImage").attr("src", place.image_url);
+                } else {
+                    $("#locationImage").remove();
+                }
+
+                $('#upvoteButton').click(function(){
+                    userProxy.vote(user.id, place.id, 'upvote');
+                    location.reload();
+                });
+
+                $('#downvoteButton').click(function(){
+                    userProxy.vote(user.id, place.id, 'downvote');
+                    location.reload();
+                });
+            });
+        });
+
+        angular.module('mainApp', [])
+                .controller('votingPeopleController', votingPeopleController);
+
+    </script>
+
+</head>
+
+<body ng-app="mainApp">
+
+<div class="container" id="main">
+
+    <!-- Navigation Bar-->
+    <div class="navbar navbar-fixed-top">
+        <div class="container">
+            <button class="navbar-toggle" data-target=".navbar-responsive-collapse" data-toggle="collapse"
+                    type="button">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <a class="navbar-brand" id="places"><b>My City Dashboard</b></a>
+
+            <div class="nav-collapse collapse navbar-responsive-collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="index.html"><i class="glyphicon glyphicon-home"></i></a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav pull-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span
+                                class="glyphicon glyphicon-user"></span><span id="headername"></span><strong
+                                class="caret"></strong></a>
+                        <ul class="dropdown-menu">
+
+                            <li>
+                                <a href="user.html"> Profile</a>
+                            </li>
+
+                            <li class="divider"></li>
+
+                            <li>
+                                <a href="login.html"><span class="glyphicon glyphicon-off"></span> Sign out</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- End Navigation Bar -->
+
+    <!-- Event Panel-->
+    <div class=" profile row col-sm-9 spacer">
+
+        <div class="col-sm-9">
+            <div class="col-sm-5">
+                <h2><span id="location_name"></span></h2>
+
+                <p><strong><span class="glyphicon glyphicon glyphicon-user"></span> Initiator: </strong><span
+                        id="initiator"></span></p>
+
+                <p><strong><span class="glyphicon glyphicon-map-marker"></span> Location: </strong> Bucharest </p>
+
+                <p><strong><span class="glyphicon glyphicon glyphicon-pencil"></span> Description: </strong> <span
+                        id="message"> </span></p>
+
+                <p><strong><span class="glyphicon glyphicon glyphicon-star-empty"></span> Rating: </strong><strong
+                        style="font-size:26px;"><span id="Rating"></span></strong> <span
+                        style="color:#F7BE81; font-size:26px;" class="glyphicon glyphicon-star"></span>
+                </p>
+
+                <p>
+                    <small>Evaluate this location:</small>
+                </p>
+
+            </div>
+            <div class="col-sm-7 text-center">
+                <img id="locationImage" src="" alt=""
+                     height="240" width="450">
+            </div>
+        </div>
+
+        <div class="col-sm-9 divider text-center">
+
+            <div class="col-sm-4 emphasis">
+                <button class="btn btn-success btn-block" id="upvoteButton"><span
+                        class="glyphicon glyphicon-hand-up"></span> Rate +1
+                </button>
+            </div>
+            <div class="col-sm-4 emphasis">
+                <button class="btn btn-danger btn-block"  id="downvoteButton"><span
+                        class="glyphicon glyphicon-hand-down"></span> Rate -1
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- End Event Panel-->
+
+    <!-- Right side panel --> <!-- -->
+    <div class="row col-sm-3 spacer">
+        <div style="height: 100%;" class="panel panel-default panel-width">
+            <div class="panel-heading">
+                <h3 class="panel-title"><b>People who voted this location</b></h3>
+            </div>
+            <div ng-controller="votingPeopleController" style="overflow-y:auto;" class="panel-body">
+                <p ng-repeat="x in votingPeople">
+                    <a href="#" ng-click="$event.preventDefault(); saveUserAndRedirect(x.id, 'user.html')">
+                        {{ x.firstName }} {{ x.lastName }}
+                    </a>
+                </p>
+
+            </div>
+    </div>
+    <!-- End Right side panel -->
+</div>
+</body>
+</html>

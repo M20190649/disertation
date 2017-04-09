@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Log In</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+
+    <!-- Optional: Include the jQuery library -->
+    <script src="js/external/jquery.min.js"></script>
+    <!-- Optional: Incorporate the Bootstrap JavaScript plugins -->
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link href="css/external/style.css" rel="stylesheet">
+
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+
+    <script src="js/config.js"></script>
+    <script type="text/javascript" src="js/storage.js"></script>
+    <script src="js/UserProxy.js"></script>
+    <script src="js/fbLogin.js"> </script>
+
+    <script>
+
+        $("form").submit(function (e) {
+            e.preventDefault();
+        });
+
+        function signin() {
+            var storage = undefined;
+            if ($("#rememberMe").prop("checked")) {
+                storage = localStorage;
+            }
+            else {
+                storage = sessionStorage;
+            }
+
+            var user = new Object();
+
+            user.email = $("#email").val();
+            user.password = $("#password").val();
+
+            if (user.email == "" || user.password == "") {
+                ajaxFailed("Please fill out all fields!");
+                return;
+            }
+
+            var successHandler = function (data, textStatus, jqXHR) {
+                if (jqXHR.status == 401) {
+                    ajaxFailed("Invalid user or password, please try again!");
+                } else {
+                    user.accessToken = data.access_token;
+                    user.id = data.userId;
+                    storage.user =  JSON.stringify(user);
+                    storage.accessToken = user.accessToken;
+                    window.location.href = "index.html";
+                }
+            };
+
+            var failureHandler = function () {
+                ajaxFailed("Something went horribly wrong with your request, please try again later!");
+            };
+
+            var userProxy = new UserProxy();
+
+            userProxy.login(user, successHandler, failureHandler);
+
+            function ajaxFailed(message) {
+
+                $("#LogInTitle").
+                        append($("<div/>", {
+                            class: "row",
+                            id: "removeFailedMessage",
+                            style: "margin-top:10px;margin-bottom:10px;text-align:center"
+                        }).append($("<div/>", {
+                            class: "alert alert-danger",
+                            role: "alert",
+                            style: "margin-bottom:0px"
+                        }).append("<strong>" + message)))
+
+                window.setTimeout(function () {
+                    $("#removeFailedMessage").fadeTo(2000, 0).slideUp(2000, function () {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
+        }
+    </script>
+
+
+</head>
+
+<body>
+
+<div class="container" id="main">
+
+    <!-- Navigation Bar-->
+    <div class="navbar navbar-fixed-top">
+        <div class="container">
+            <a class="navbar-brand" id="places"><b>My City Dashboard</b></a>
+
+        </div>
+    </div>
+    <!-- End Navigation Bar -->
+
+    <div class="container spacer">
+        <div class="row">
+
+            <div class="main">
+
+                <div id='LogInTitle'><h3>Please Log In, or <a href="register.html">Register</a></h3></div>
+                <div class="login-or">
+                    <hr/>
+                </div>
+
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="email" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" class="form-control" id="password" placeholder="Password">
+                    </div>
+                    <div class="checkbox pull-right">
+                        <label>
+                            <input type="checkbox" id="rememberMe"> Remember me
+                        </label>
+                    </div>
+                </form>
+
+                <button type="submit" class="btn btn btn-primary" onclick="signin()">
+                    Log In
+                </button>
+
+            </div>
+
+            <fb:login-button scope="public_profile,email" onlogin="checkLoginState();">
+            </fb:login-button>
+
+            <div id="status">
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="css/external/style.css">
+	<title>User Profile</title>
+
+ 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+
+  	<script type="text/javascript" src="js/config.js"></script>
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+
+	<!-- Optional: Include the jQuery library -->
+	<script src="js/external/jquery.min.js"></script>
+	<!-- Optional: Incorporate the Bootstrap JavaScript plugins -->
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+	<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+
+	<script type="text/javascript" src="js/config.js"></script>
+	<script type="text/javascript" src="js/storage.js"></script>
+	<script src="js/controllers/votedLocationsController.js"></script>
+	<script src="js/controllers/createdLocationsController.js"></script>
+
+	<script>
+		function redirectToLocation(id, redirect) {
+
+			var request = $.ajax({
+				url: config.uri + "/locations/" + id,
+				type: "GET",
+				connection: "keep-alive",
+				contentType: "application/json",
+				dataType: "json",
+				cache: false,
+			});
+
+			request.done(function(place) {
+				storage.place = JSON.stringify(place);
+				window.location.href = redirect;
+			});
+		}
+
+		$(function() {
+			selectedUser = $.parseJSON(storage.selectedUser);
+			$("#userName").text(selectedUser.firstName + " " + selectedUser.lastName);
+			$("#userName2").text(selectedUser.firstName + " " + selectedUser.lastName);
+			$("#email").text(selectedUser.email);
+		});
+
+
+		angular.module('mainApp', [])
+				.controller('votedLocationsController', votedLocationsController);
+
+		angular.module('mainApp', [])
+				.controller('createdLocationsController', createdLocationsController);
+
+
+	</script>
+
+</head>
+
+<body ng-app="mainApp">
+
+	<div class="container" id="main">
+
+		<!-- Navigation Bar-->
+		<div class="navbar navbar-fixed-top">
+			<div class="container">
+				<button class="navbar-toggle" data-target=".navbar-responsive-collapse" data-toggle="collapse" type="button">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+
+				<a class="navbar-brand" id="places"><b>My City Dashboard</b></a>
+
+				<div class="nav-collapse collapse navbar-responsive-collapse">
+					<ul class="nav navbar-nav">
+						<li>
+							<a href="index.html"><i class="glyphicon glyphicon-home"></i></a>
+						</li>
+					</ul>
+
+					<ul class="nav navbar-nav pull-right">
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span><span id="userName2"></span><strong class="caret"></strong></a>
+							<ul class="dropdown-menu">
+
+								<li>
+									<a href="user.html"> Profile</a>
+								</li>
+
+								<li class="divider"></li>
+
+								<li>
+									<a href="login.html"><span class="glyphicon glyphicon-off"></span> Sign out</a>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div><!-- End Navigation Bar -->
+
+		<!-- Profile Panel-->
+		<div class=" profile row col-sm-9 spacer">
+
+			<div class="col-sm-9">
+				<div class="col-sm-9">
+					<strong><span class="glyphicon glyphicon glyphicon-pencil"></span> Username: </strong> <span id="userName"></span></p>
+					<strong><span class="glyphicon glyphicon glyphicon-envelope"></span> Email: </strong> <span id="email"></span></p>
+					</div>
+				</div>
+
+			</div> <!-- End Profile Panel-->
+
+			<!-- Right side panels --> <!-- -->
+			<div class="row col-sm-3 spacer">
+
+				<!-- Voted locations panel-->
+				<div style="height: 100%;" class="panel panel-default panel-width">
+					<div class="panel-heading">
+						<h3 class="panel-title"><b>Voted locations</b></h3>
+					</div>
+					<div ng-controller="votedLocationsController" style="overflow-y:auto;" class="panel-body">
+						<p ng-repeat="x in top_locations">
+							<a href="#" ng-click="$event.preventDefault(); redirectToLocation(x.id, 'location.html')">
+								{{ x.votes }}
+								<span style="color:#F7BE81;" class="glyphicon glyphicon-star"> </span>
+								{{ x.name }}
+							</a>
+						</p>
+
+					</div>
+				</div> <!-- End voted locations panel-->
+
+				<!-- Created locations panel-->
+				<div style="height: 100%;" class="panel panel-default panel-width">
+					<div class="panel-heading">
+						<h3 class="panel-title"><b>Created locations</b></h3>
+					</div>
+					<div ng-controller="createdLocationsController" style="overflow-y:auto;" class="panel-body">
+						<p ng-repeat="x in createdLocations">
+							<a href="#" ng-click="$event.preventDefault(); redirectToLocation(x.id, 'location.html')">
+								{{ x.votes }}
+								<span style="color:#F7BE81;" class="glyphicon glyphicon-star"> </span>
+								{{ x.name }}
+							</a>
+						</p>
+
+					</div>
+				</div> <!-- End created locations panel-->
+
+			</div> <!-- End Right side panels -->
+		</div>
+	</body>
+</html>

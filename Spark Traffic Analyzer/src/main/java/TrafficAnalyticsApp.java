@@ -59,6 +59,7 @@ public class TrafficAnalyticsApp {
         String user = args[5];
         String pass = args[6];
         String config = args[7];
+        String traceFile = args[8];
 
         Logger log = LogManager.getRootLogger();
         log.setLevel(Level.INFO);
@@ -67,7 +68,7 @@ public class TrafficAnalyticsApp {
         System.out.println("Start");
 
         // Create a Java Spark Context.
-        SparkConf conf = new SparkConf().setAppName("wordCount");
+        SparkConf conf = new SparkConf().setAppName("TrafficAnalyticsApp");
         JavaSparkContext sc = new JavaSparkContext(conf);
 
 
@@ -76,7 +77,7 @@ public class TrafficAnalyticsApp {
 
         // Load trace data as RDD from CSV file asset of tuples:
         // (object-id: String, time: Long, position: Point)
-        JavaRDD<Tuple3<String, Long, Point>> traces = sc.textFile("traces.csv").map(new Function<String, Tuple3<String, Long, Point>>() {
+        JavaRDD<Tuple3<String, Long, Point>> traces = sc.textFile(traceFile).map(new Function<String, Tuple3<String, Long, Point>>() {
             @Override
             public Tuple3<String, Long, Point> call(String line) throws Exception {
                 String[] split = line.split(",");

@@ -42,6 +42,7 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple3;
 import scala.Tuple4;
+import scala.collection.Iterator;
 
 
 public class TrafficAnalyticsApp {
@@ -71,15 +72,23 @@ public class TrafficAnalyticsApp {
         SparkConf conf = new SparkConf().setAppName("TrafficAnalyticsApp");
         JavaSparkContext sc = new JavaSparkContext(conf);
 
+        String configFile = "";
+        JavaPairRDD<String, String> rdd = sc.wholeTextFiles(config);
+
+        configFile = rdd.first()._2();
+
+        log.info("Config file: " + configFile);
 
         // Instantiate map matcher as broadcast variable in Spark Context (sc).
-        Broadcast<BroadcastMatcher> matcher = sc.broadcast(new BroadcastMatcher().getInstance(host, port, database, user, pass, config));
+        Broadcast<BroadcastMatcher> matcher = sc.broadcast(new BroadcastMatcher(host, port, database, user, pass, configFile ));
 
         // Load trace data as RDD from CSV file asset of tuples:
         // (object-id: String, time: Long, position: Point)
         JavaRDD<Tuple3<String, Long, Point>> traces = sc.textFile(traceFile).map(new Function<String, Tuple3<String, Long, Point>>() {
             @Override
             public Tuple3<String, Long, Point> call(String line) throws Exception {
+                log.info("Trace line: " + line);
+
                 String[] split = line.split(",");
                 return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[2]), Double.parseDouble(split[3])));
             }
@@ -103,15 +112,15 @@ public class TrafficAnalyticsApp {
 
 }
 
-class BroadcastMatcher implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private BroadcastMatcher instance = null;
-    private Matcher matcher = null;
+final class BroadcastMatcherSingleton {
+    public static BroadcastMatcherSingleton instance = null;
+    public static Matcher matcher = null;
 
-    public BroadcastMatcher getInstance(String host, int port, String name, String user, String pass, String configFile) throws JSONException {
+    public static BroadcastMatcherSingleton getInstance(String host, int port, String name, String user, String pass, String configFile) throws JSONException {
         if (instance == null) {
-            synchronized (this) {
+            synchronized (BroadcastMatcherSingleton.class) {
                 if (instance == null) { // initialize map matcher once per Executor (JVM process/cluster node)
+
                     PostGISReader reader = new PostGISReader(host, port, name, "bfmap_ways", user, pass, Configuration.read(new JSONObject(configFile)));
                     RoadMap map = RoadMap.Load(reader);
 
@@ -121,7 +130,7 @@ class BroadcastMatcher implements Serializable {
                     TimePriority cost = new TimePriority();
                     Geography spatial = new Geography();
 
-                    instance = new BroadcastMatcher();
+                    instance = new BroadcastMatcherSingleton();
                     instance.matcher = new Matcher(map, router, cost, spatial);
                 }
             }
@@ -129,12 +138,34 @@ class BroadcastMatcher implements Serializable {
 
         return instance;
     }
+}
 
-    public MatcherKState mmatch(List<MatcherSample> samples) {
+class BroadcastMatcher implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private BroadcastMatcher instance = null;
+    private Matcher matcher = null;
+
+    String host;
+    int port;
+    String name;
+    String user;
+    String pass;
+    String configFile;
+
+    public BroadcastMatcher(String host, int port, String name, String user, String pass, String configFile) {
+        this.host = host;
+        this.port = port;
+        this.name = name;
+        this.user = user;
+        this.pass = pass;
+        this.configFile = configFile;
+    }
+
+    public MatcherKState mmatch(List<MatcherSample> samples) throws JSONException  {
         return mmatch(samples, 0, 0);
     }
 
-    public MatcherKState mmatch(List<MatcherSample> samples, double minDistance, int minInterval) {
-        return this.instance.matcher.mmatch(samples, minDistance, minInterval);
+    public MatcherKState mmatch(List<MatcherSample> samples, double minDistance, int minInterval) throws JSONException  {
+        return BroadcastMatcherSingleton.getInstance(host, port, name, user, pass, configFile).matcher.mmatch(samples, minDistance, minInterval);
     }
 }

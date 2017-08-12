@@ -103,6 +103,8 @@ public class TrafficAnalyticsApp {
 
         System.out.println("Count lines " + matches.count());
 
+        log.info("Matches count: " + matches.count());
+
         matches.saveAsObjectFile(outputFile);
 
         sc.stop();

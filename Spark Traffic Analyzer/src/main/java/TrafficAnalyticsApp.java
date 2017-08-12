@@ -127,11 +127,13 @@ public class TrafficAnalyticsApp {
     public static String helper(String a, List<MatcherCandidate> lst) {
         String temp = "";
 
-        for(MatcherCandidate m: lst) {
-            try {
-                temp += a + '\n' + m.toJSON();
-            } catch(Exception ex) {
+        if(lst != null) {
+            for(MatcherCandidate m: lst) {
+                try {
+                    temp += a + '\n' + m.toJSON();
+                } catch(Exception ex) {
 
+                }
             }
         }
 

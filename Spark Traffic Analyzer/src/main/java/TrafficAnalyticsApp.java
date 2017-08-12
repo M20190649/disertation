@@ -87,8 +87,6 @@ public class TrafficAnalyticsApp {
         JavaRDD<Tuple3<String, Long, Point>> traces = sc.textFile(traceFile).map(new Function<String, Tuple3<String, Long, Point>>() {
             @Override
             public Tuple3<String, Long, Point> call(String line) throws Exception {
-                log.info("Trace line: " + line);
-
                 String[] split = line.split(",");
                 return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[2]), Double.parseDouble(split[3])));
             }

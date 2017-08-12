@@ -142,8 +142,6 @@ final class BroadcastMatcherSingleton {
 
 class BroadcastMatcher implements Serializable {
     private static final long serialVersionUID = 1L;
-    private BroadcastMatcher instance = null;
-    private Matcher matcher = null;
 
     String host;
     int port;

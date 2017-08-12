@@ -50,7 +50,7 @@ public class TrafficAnalyticsApp {
         return StreamSupport.stream(in.spliterator(), false);
     }
 
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception, JSONException   {
         String inputFile = args[0];
         String outputFile = args[1];
 
@@ -101,13 +101,41 @@ public class TrafficAnalyticsApp {
 
                 });
 
+
+
+        JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
+
+       /* stringListTuple2 -> {
+            String temp = "";
+
+            for(MatcherCandidate m: stringListTuple2._2()) {
+                temp += stringListTuple2._1() + '\n' + m.toJSON();
+            }
+
+            return temp;
+        }*/
+
         System.out.println("Count lines " + matches.count());
 
         log.info("Matches count: " + matches.count());
 
-        matches.saveAsObjectFile(outputFile);
+        ouput.saveAsObjectFile(outputFile);
 
         sc.stop();
+    }
+
+    public static String helper(String a, List<MatcherCandidate> lst) {
+        String temp = "";
+
+        for(MatcherCandidate m: lst) {
+            try {
+                temp += a + '\n' + m.toJSON();
+            } catch(Exception ex) {
+
+            }
+        }
+
+        return temp;
     }
 
 }

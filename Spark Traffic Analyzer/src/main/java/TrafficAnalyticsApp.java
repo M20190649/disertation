@@ -108,6 +108,9 @@ public class TrafficAnalyticsApp {
                 {
                     List<MatcherSample> trip = stream(x._2())
                             .map(sample -> new MatcherSample(sample._1(), sample._2(), sample._3())).collect(Collectors.toList());
+
+                    System.out.println("Trip length: " + trip.size());
+
                     return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
 
                 });

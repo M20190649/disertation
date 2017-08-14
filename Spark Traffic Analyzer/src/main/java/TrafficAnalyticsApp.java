@@ -92,6 +92,17 @@ public class TrafficAnalyticsApp {
             }
         });
 
+
+        log.info("Contents of mapped traces:\n");
+
+        sc.textFile(traceFile).map(new Function<String, Tuple3<String, Long, Point>>() {
+            @Override
+            public Tuple3<String, Long, Point> call(String line) throws Exception {
+                String[] split = line.split(",");
+                return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[2]), Double.parseDouble(split[3])));
+            }
+        }).collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
+
         JavaRDD<Tuple2<String, List<MatcherCandidate>>> matches = traces.groupBy(x -> x._1())
                 .map(x ->
                 {

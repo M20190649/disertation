@@ -135,7 +135,7 @@ public class TrafficAnalyticsApp {
 
         log.info("Matches count: " + matches.count());
 
-        ouput.saveAsObjectFile(outputFile);
+        //ouput.saveAsObjectFile(outputFile);
 
         sc.stop();
     }

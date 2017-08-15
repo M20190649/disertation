@@ -103,21 +103,23 @@ public class TrafficAnalyticsApp {
                 }
         }).collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
 
-        JavaRDD<Tuple2<String, List<MatcherCandidate>>> matches = traces.groupBy(x -> x._1())
+        JavaRDD<Tuple2<String, List<MatcherSample>>> matches = traces.groupBy(x -> x._1())
                 .map(x ->
                 {
                     List<MatcherSample> trip = stream(x._2())
                             .map(sample -> new MatcherSample(sample._1(), sample._2(), sample._3())).collect(Collectors.toList());
 
-                    System.out.println("Trip length: " + trip.size());
+                    //System.out.println("Trip length: " + trip.size());
 
-                    return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
+                   //return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
+                    return new Tuple2<String, List<MatcherSample>>(x._1(), trip);
+                }
+                );
 
-                });
 
+        matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
 
-
-        JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
+        //JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
 
        /* stringListTuple2 -> {
             String temp = "";

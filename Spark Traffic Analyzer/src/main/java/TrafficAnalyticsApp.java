@@ -106,8 +106,6 @@ public class TrafficAnalyticsApp {
         JavaRDD<Tuple2<String, List<MatcherCandidate>>> matches = traces.groupBy(x -> x._1())
                 .map(x ->
                 {
-                    System.out.println(": " + );
-
                     List<MatcherSample> trip = stream(x._2())
                             .map(sample -> new MatcherSample(sample._1(), sample._2(), sample._3())).collect(Collectors.toList());
 

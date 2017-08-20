@@ -172,6 +172,8 @@ final class BroadcastMatcherSingleton {
 
                     map.construct();
 
+                    System.out.println(map.size());
+
                     Dijkstra router = new Dijkstra<Road, RoadPoint>();
                     TimePriority cost = new TimePriority();
                     Geography spatial = new Geography();

@@ -116,6 +116,7 @@ public class TrafficAnalyticsApp {
                 }
                 );
 
+        System.out.println("Ouputing mappings \n");
 
         try {
             matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3._2().get(0).point().toString()));

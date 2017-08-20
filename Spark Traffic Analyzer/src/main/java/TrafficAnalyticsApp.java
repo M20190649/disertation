@@ -103,7 +103,7 @@ public class TrafficAnalyticsApp {
                 }
         }).collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
 
-        JavaRDD<Tuple2<String, List<MatcherSample>>> matches = traces.groupBy(x -> x._1())
+        JavaRDD<Tuple2<String, List<MatcherCandidate>>> matches = traces.groupBy(x -> x._1())
                 .map(x ->
                 {
                     List<MatcherSample> trip = stream(x._2())
@@ -111,15 +111,14 @@ public class TrafficAnalyticsApp {
 
                     //System.out.println("Trip length: " + trip.size());
 
-                   //return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
-                    return new Tuple2<String, List<MatcherSample>>(x._1(), trip);
+                   return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
                 }
                 );
 
         System.out.println("Ouputing mappings \n");
 
         try {
-            matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3._2().get(0).point().toString()));
+            matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3._2().size()));
         } catch (Exception ex) {
 
         }

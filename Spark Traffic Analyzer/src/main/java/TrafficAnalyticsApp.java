@@ -109,8 +109,6 @@ public class TrafficAnalyticsApp {
                     List<MatcherSample> trip = stream(x._2())
                             .map(sample -> new MatcherSample(sample._1(), sample._2(), sample._3())).collect(Collectors.toList());
 
-                    //System.out.println("Trip length: " + trip.size());
-
                    return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
                 }
                 );
@@ -118,7 +116,7 @@ public class TrafficAnalyticsApp {
         System.out.println("Ouputing mappings \n");
 
         try {
-            matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3._2().size()));
+            matches.collect().forEach(stringLongPointTuple3 -> System.out.println("Size of matched trip: " + stringLongPointTuple3._2().size()));
         } catch (Exception ex) {
 
         }
@@ -136,8 +134,6 @@ public class TrafficAnalyticsApp {
         }*/
 
         System.out.println("Count lines " + matches.count());
-
-        log.info("Matches count: " + matches.count());
 
         //ouput.saveAsObjectFile(outputFile);
 

@@ -117,7 +117,11 @@ public class TrafficAnalyticsApp {
                 );
 
 
-        matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
+        try {
+            matches.collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3._2().get(0).point().toString()));
+        } catch (Exception ex) {
+
+        }
 
         //JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
 

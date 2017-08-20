@@ -23,7 +23,7 @@ Spark
 https://spark.apache.org/docs/2.1.0/spark-standalone.html
 
 ./sbin/start-master.sh
-./sbin/start-slave.sh  spark://unknown:7077
+./sbin/start-slave.sh  spark://<spark_url>:7077
 
 sbin/stop-master.sh
 sbin/stop-slaves.sh - see conf/slaves
@@ -66,3 +66,6 @@ sudo docker attach MapServerContainer
 
 
 psql -h 127.0.0.1 -p 5432 -d Disertation --username=ubuntu
+
+bash /mnt/map/osm/import.sh /mnt/map/osm/SanFrancisco.osm.pbf Disertation ubuntu 123 /mnt/map/tools/road-types.json slim
+

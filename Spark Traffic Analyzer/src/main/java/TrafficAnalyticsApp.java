@@ -121,7 +121,7 @@ public class TrafficAnalyticsApp {
 
         }
 
-        //JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
+        JavaRDD<String> ouput = matches.map(v1 -> helper(v1._1(), v1._2()));
 
        /* stringListTuple2 -> {
             String temp = "";

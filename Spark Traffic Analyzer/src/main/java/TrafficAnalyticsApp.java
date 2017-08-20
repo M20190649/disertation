@@ -101,17 +101,16 @@ public class TrafficAnalyticsApp {
                     String[] split = line.split(",");
                     return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[3]), Double.parseDouble(split[2])));
                 }
-        }).collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
+        });
 
         JavaRDD<Tuple2<String, List<MatcherCandidate>>> matches = traces.groupBy(x -> x._1())
-                .map(x ->
-                {
+                .map(x -> {
                     List<MatcherSample> trip = stream(x._2())
                             .map(sample -> new MatcherSample(sample._1(), sample._2(), sample._3())).collect(Collectors.toList());
 
+                    System.out.println("test\n");
                    return new Tuple2<String, List<MatcherCandidate>>(x._1(), matcher.getValue().mmatch(trip).sequence());
-                }
-                );
+                });
 
         System.out.println("Ouputing mappings \n");
 

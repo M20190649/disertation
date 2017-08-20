@@ -216,12 +216,6 @@ class BroadcastMatcher implements Serializable {
     }
 
     public MatcherKState mmatch(List<MatcherSample> samples, double minDistance, int minInterval) throws JSONException  {
-
-        for(MatcherSample sample: samples) {
-            System.out.println("Print sample");
-            System.out.println(sample.toJSON());
-        }
-
         return BroadcastMatcherSingleton.getInstance(host, port, name, user, pass, configFile).matcher.mmatch(samples, minDistance, minInterval);
     }
 }

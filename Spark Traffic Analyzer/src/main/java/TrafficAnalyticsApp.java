@@ -99,7 +99,7 @@ public class TrafficAnalyticsApp {
                 @Override
                 public Tuple3<String, Long, Point> call(String line) throws Exception {
                     String[] split = line.split(",");
-                    return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[2]), Double.parseDouble(split[3])));
+                    return new Tuple3<String, Long, Point>(split[0], Long.parseLong(split[1]), new Point(Double.parseDouble(split[3]), Double.parseDouble(split[2])));
                 }
         }).collect().forEach(stringLongPointTuple3 -> System.out.println(stringLongPointTuple3));
 

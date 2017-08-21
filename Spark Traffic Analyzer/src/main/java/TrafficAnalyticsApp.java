@@ -152,6 +152,8 @@ public class TrafficAnalyticsApp {
             }
         }
 
+        System.out.println(temp);
+
         return temp;
     }
 

@@ -71,7 +71,7 @@ public class DashboardAnalyticsApp {
     String schemaString = "average min max count";
 
     // Generate the schema based on the string of schema
-    List<StructField> fields = new ArrayList<StructField>();
+      List<StructField> fields = new ArrayList<StructField>();
     for (String fieldName: schemaString.split(" ")) {
       fields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
     }
@@ -123,6 +123,7 @@ public class DashboardAnalyticsApp {
 
           double avg = samples.mean();
           double min = samples.min();
+
           double max = samples.max();
           double count = samples.count();
 
@@ -243,4 +244,7 @@ public class DashboardAnalyticsApp {
     // Stop the streaming context
     jssc.stop();
   }
+
+
+
 }

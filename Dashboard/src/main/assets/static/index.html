@@ -367,6 +367,23 @@
             displayTiles();
             window.timerId3 = setInterval(displayTiles, 10000);
 
+
+            window.timerId4 = setInterval(function() {
+                var request = $.ajax({
+                    url: config.uri + "/traffic/averageVelocities",
+                    type: "GET",
+                    connection: "keep-alive",
+                    headers: {"Authorization": config.accessToken},
+                    contentType: "application/json",
+                    dataType: "json",
+                    cache: false
+                });
+
+                request.done(function(averageVelocities) {
+                    window.averageVelocities = averageVelocities;
+                });
+            }, 1000);
+
         }
 
         function init_jquery() {

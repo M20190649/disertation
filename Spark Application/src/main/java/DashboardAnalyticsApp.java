@@ -289,7 +289,7 @@ public class DashboardAnalyticsApp {
 
               DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema2);
 
-              dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Overwrite).options(TilesMongoConfig).save();
+              dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Append).options(TilesMongoConfig).save();
             }
           }
         }

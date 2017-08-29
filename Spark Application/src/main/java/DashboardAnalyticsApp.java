@@ -240,6 +240,9 @@ public class DashboardAnalyticsApp {
     for (String fieldName: schemaString2.split(" ")) {
       if(fieldName.equals("key")) {
         fields2.add(DataTypes.createStructField(fieldName, DataTypes.StringType, true));
+      }
+      else if (fieldName.equals("CountCarsForAverageVelocity")) {
+        fields2.add(DataTypes.createStructField(fieldName, DataTypes.IntegerType, true));
       } else {
         fields2.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
       }

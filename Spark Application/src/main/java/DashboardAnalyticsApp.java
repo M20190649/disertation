@@ -164,8 +164,8 @@ public class DashboardAnalyticsApp {
 
         GeodeticCalculator gc = new GeodeticCalculator();
 
-        gc.setStartingGeographicPoint(refLat, refLong);
-        gc.setDestinationGeographicPoint(latitude, refLong);
+        gc.setStartingGeographicPoint(refLong, refLat);
+        gc.setDestinationGeographicPoint(longitude, refLat);
 
         double distance = gc.getOrthodromicDistance();
 
@@ -174,8 +174,8 @@ public class DashboardAnalyticsApp {
 
         gc = new GeodeticCalculator();
 
-        gc.setStartingGeographicPoint(refLat, refLong);
-        gc.setDestinationGeographicPoint(refLat, longitude);
+        gc.setStartingGeographicPoint(refLong, refLat);
+        gc.setDestinationGeographicPoint(refLong, latitude);
 
         distance = gc.getOrthodromicDistance();
         int totalmetersY = (int) distance;

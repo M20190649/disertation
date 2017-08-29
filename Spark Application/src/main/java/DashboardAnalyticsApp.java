@@ -200,7 +200,7 @@ public class DashboardAnalyticsApp {
                   if (averageVelocitiesByDirection.size() < countCarVectorDirections) {
                     averageVelocitiesByDirection.add(carVelocity);
                   } else {
-                    int minAngleAverageVelocityId = -1;
+                    int minAngleAverageVelocityId = 0; // de ce a dat eroare la -1 ?
                     double minAngleValue = 360;
 
                     for (int i = 0; i < averageVelocitiesByDirection.size(); i++) {

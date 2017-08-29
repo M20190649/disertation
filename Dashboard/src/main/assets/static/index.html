@@ -33,7 +33,6 @@
     <link rel="stylesheet" href="css/external/jquery.typeahead.min.css">
     <script src="js/external/jquery.typeahead.min.js"></script>
 
-
     <style>
         /* Extra styles to adjust Typeahead */
         .typeahead-container {
@@ -117,6 +116,17 @@
 
         // Populate map locations.
         function initialize() {
+
+            script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'js/external/heatmap.min.js';
+            document.body.appendChild(script);
+
+            script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'js/external/gmaps-heatmap.js';
+            document.body.appendChild(script);
+
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(setCurrentPositionSuccess, setCurrentPositionFailure);
@@ -251,6 +261,17 @@
             });
         }
 
+        function whenAvailable(name, callback) {
+            var interval = 10; // ms
+            window.setTimeout(function() {
+                if (window[name]) {
+                    callback(window[name]);
+                } else {
+                    window.setTimeout(arguments.callee, interval);
+                }
+            }, interval);
+        }
+
         // onload
         function loadScript() {
             var user = $.parseJSON(storage['user']);
@@ -271,10 +292,8 @@
 
             init_jquery();
 
-
-
             // Analytics
-            window.timerId1 = setInterval(function() {
+        /*    window.timerId1 = setInterval(function() {
                 var request = $.ajax({
                     url: config.uri + "/noise/latestAggregate",
                     type: "GET",
@@ -366,7 +385,7 @@
 
             displayTiles();
             window.timerId3 = setInterval(displayTiles, 10000);
-
+*/
 
             window.timerId4 = setInterval(function() {
                 var request = $.ajax({
@@ -382,8 +401,47 @@
                 request.done(function(averageVelocities) {
                     window.averageVelocities = averageVelocities;
                 });
-            }, 1000);
+            }, 10000);
 
+            whenAvailable("HeatmapOverlay",init_heatmap);
+        }
+
+        function init_heatmap() {
+
+            google.maps.event.addListener(map, 'zoom_changed', function() {
+                var zoomLevel = map.getZoom();
+                heatmap.setOptions({radius:zoomLevel*5.5});
+                heatmap.repaint();
+            });
+
+            // heatmap layer
+            heatmap = new HeatmapOverlay(map,
+                {
+                    // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+                    "radius": 20,
+                    "maxOpacity": 1,
+                    // scales the radius based on map zoom
+                    "scaleRadius": false,
+                    // if set to false the heatmap uses the global maximum for colorization
+                    // if activated: uses the data maximum within the current map boundaries
+                    //   (there will always be a red spot with useLocalExtremas true)
+                    "useLocalExtrema": true,
+                    // which field name in your data represents the latitude - default "lat"
+                    latField: 'lat',
+                    // which field name in your data represents the longitude - default "lng"
+                    lngField: 'lng',
+                    // which field name in your data represents the data value - default "value"
+                    valueField: 'count'
+                }
+            );
+
+            var testData = {
+                max: 130,
+                min: 0,
+                data: [{lat:  44.4376, lng:26.03682, count: 30},{lat: 44.4364, lng:26.05484, count: 5}, {lat: 44.42157, lng:26.03433, count: 50},
+                    {lat:  44.4368212, lng:26.0350494, count: 30},{lat: 44.4382593, lng:26.0351593, count: 35}, {lat: 44.4343353, lng:26.0346486, count: 130}]
+            };
+            heatmap.setData(testData);
         }
 
         function init_jquery() {

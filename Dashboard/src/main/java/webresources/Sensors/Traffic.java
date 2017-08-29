@@ -32,14 +32,6 @@ public class Traffic {
         try {
             while(cursor.hasNext()) {
                 BasicDBObject obj = (BasicDBObject) cursor.next();
-                double latitude = obj.getDouble("lat");
-                double longitude = obj.getDouble("long");
-                double averageVelocity = obj.getDouble("averageVelocity");
-
-                obj.put("latitude", latitude);
-                obj.put("averageVelocity", longitude);
-                obj.put("averageVelocity", averageVelocity);
-
                 results.add(obj);
             }
         } finally {

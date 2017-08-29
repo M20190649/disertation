@@ -69,3 +69,6 @@ psql -h 127.0.0.1 -p 5432 -d Disertation --username=ubuntu
 
 bash /mnt/map/osm/import.sh /mnt/map/osm/SanFrancisco.osm.pbf Disertation ubuntu 123 /mnt/map/tools/road-types.json slim
 
+
+http://benrobb.com/2007/01/15/howto-remote-root-access-to-mysql/
+

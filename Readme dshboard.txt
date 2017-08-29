@@ -19,7 +19,7 @@ User ubuntu
 IdentityFile /path/to/private.pem
 
 
-Spark
+Spark:
 https://spark.apache.org/docs/2.1.0/spark-standalone.html
 
 ./sbin/start-master.sh
@@ -30,6 +30,35 @@ sbin/stop-slaves.sh - see conf/slaves
 sbin/stop-all.sh
 
 configure: conf/spark-env.sh
+
+
+Kafka:
+
+-- Configure Kafka
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+bin/kafka-server-start.sh config/server.properties -
+	# The port the socket server listens on
+	port=9092
+
+	# Hostname the broker will bind to. If not set, the server will bind to all interfaces
+	host.name=192.168.1.131
+
+
+
+bin/kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --zkconnect localhost:2181 --group test
+
+bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning
+
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+
+
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+
 
 
 Barefot

@@ -1,20 +1,20 @@
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RandomUtils;
+import org.geotools.referencing.GeodeticCalculator;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Date;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
+
 
 // format of input file -> 37.75134 -122.39488 0 1213084687
 public class TrafficTraceProducer implements Runnable {
     private String m_nFileLocation;
+
+    final static String trafficTopic = "traffic";
 
     public TrafficTraceProducer(String a_nFileLocation) {
         m_nFileLocation = a_nFileLocation;
@@ -22,79 +22,116 @@ public class TrafficTraceProducer implements Runnable {
 
     public void run() {
 
-        long unixTime = System.currentTimeMillis() / 1000L;
-        long unixTimeOffset = 0; // used to translate read timestamps to current timestamps
-
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(m_nFileLocation))
-
-            String line;
-            while ((line = br.readLine()) != null) {
-                // process the line.
-            }
-        } catch (FileNotFoundException fne) {
-            System.out.println("File Not Found" + fne.getStackTrace());
-        } catch (IOException ioe) {
-            System.out.println("IOException" + ioe.getStackTrace());
-        }
-
-
-        long events = m_nEvents;
-        Random rnd = new Random();
-
-        System.out.println("Staring producer with: " + events);
+        System.out.println("Staring traffic producer");
 
         Properties props = new Properties();
-        props.put("metadata.broker.list", "192.168.1.131:9092");
+        props.put("metadata.broker.list", Config.brokerList);
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "SimplePartitioner");
         props.put("request.required.acks", "1");
-
-        System.out.println("Staring producer with: " + events);
 
         ProducerConfig config = new ProducerConfig(props);
 
         Producer<String, String> producer = new Producer<String, String>(config);
 
-        System.out.println("Staring producer with: " + events);
+        try {
+            Vector<String> lines = new Vector<String>();
+            BufferedReader br = new BufferedReader(new FileReader(m_nFileLocation));
 
-        for (long nEvents = 0; nEvents < events; nEvents++) {
-            long runtime = new Date().getTime();
-            String ip = "192.168.1.131";
-
-            String msg;
-            if(nEvents % 100 == 0) {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
-                        RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
-                        RandomUtils.nextFloat((float) 44.5005622, (float) 44.5028918),
-                        RandomUtils.nextFloat((float) 26.095008, (float) 26.1294057),
-                        RandomUtils.nextFloat(120, 150));
-            } else if(nEvents % 200 == 0) {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
-                        RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
-                        RandomUtils.nextFloat((float) 4.4316092, (float) 44.4330008),
-                        RandomUtils.nextFloat((float) 26.0977631, (float) 26.10281537),
-                        RandomUtils.nextFloat(60, 100));
-            }
-            else
-            {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
-                        RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
-                        RandomUtils.nextFloat((float) 44.3332918, (float) 44.543616),
-                        RandomUtils.nextFloat((float) 25.9563351, (float) 26.2386826),
-                        RandomUtils.nextFloat(0, 100));
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines.add(line);
             }
 
-            KeyedMessage<String, String> data = new KeyedMessage<String, String>("noise", ip, msg);
-            producer.send(data);
+            Collections.reverse(lines);
 
-            System.out.println("Sent: " + msg);
+            double velocityX = 0;
+            double velocityY = 0;
+            double previousLat = 0;
+            double previousLong = 0;
+            long previousTimeStamp = 0;
+
+            int currentDay = new java.util.Date().getDay();
+
+
+            for(String line2: lines) {
+                String[] parts = line2.split(" ");
+
+                double latitude = Double.parseDouble(parts[0]);
+                double longitude = Double.parseDouble(parts[1]);
+
+                long timestamp = Long.parseLong(parts[3]);
+
+                java.util.Date time = new java.util.Date((long)timestamp * 1000); // convert to milliseconds
+
+                // We mark all trips as occuring today
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.HOUR,  time.getHours());
+                cal.set(Calendar.MINUTE,  time.getMinutes());
+                cal.set(Calendar.SECOND, time.getSeconds());
+
+                // use it to generate a new id based on day => we translate all car traces to the same day, basically generating new traces, so we need a new carId so traces don't overlap
+                int day = time.getDay() - cal.getTime().getDay();
+
+                long translatedTimestamp = cal.getTimeInMillis(); // UTC epoch ?
+
+                if(currentDay != cal.getTime().getDay()) {
+                    velocityX = 0;
+                    velocityY = 0;
+                    previousLat = 0;
+                    previousLong = 0;
+                    previousTimeStamp = 0;
+                    currentDay = cal.getTime().getDay();
+                }
+
+                try {
+                    if(previousTimeStamp != 0) {
+                        Thread.sleep(translatedTimestamp - previousTimeStamp);
+                    }
+                } catch (Exception e) {
+                    System.out.println(e.getStackTrace());
+                }
+
+
+
+                if(previousLat != 0 && previousLong != 0) {
+                    GeodeticCalculator calc = new GeodeticCalculator();
+                    calc.setStartingGeographicPoint(previousLong, previousLat);
+                    calc.setDestinationGeographicPoint(previousLong, latitude);
+
+                    velocityX = (calc.getOrthodromicDistance() / 1000) / ((double)(translatedTimestamp - previousTimeStamp) / (1000 * 3600));
+
+                    calc = new GeodeticCalculator();
+                    calc.setStartingGeographicPoint(previousLong, previousLat);
+                    calc.setDestinationGeographicPoint(longitude, previousLat);
+
+                    velocityY = (calc.getOrthodromicDistance() / 1000) / (((double)translatedTimestamp - previousTimeStamp) / (1000 * 3600));
+
+                    previousLat = latitude;
+                    previousLong = longitude;
+                    previousTimeStamp = translatedTimestamp;
+                } else {
+                    previousLat = latitude;
+                    previousLong = longitude;
+                    previousTimeStamp = translatedTimestamp;
+                }
+
+                TrafficObject trafficObject = new TrafficObject(UUID.randomUUID().toString() + ":" + day,
+                        latitude,
+                        longitude,
+                        Integer.parseInt(parts[2]),
+                        translatedTimestamp,
+                        velocityX,
+                        velocityY);
+
+                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, "keyForPartitioning", trafficObject.toString());
+                producer.send(data);
+
+            }
+        } catch (FileNotFoundException fne) {
+            System.out.println("File Not Found" + fne.getStackTrace());
+        } catch (IOException ioe) {
+            System.out.println("IOException" + ioe.getStackTrace());
         }
 
         producer.close();

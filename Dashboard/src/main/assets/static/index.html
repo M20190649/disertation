@@ -387,9 +387,10 @@
             window.timerId3 = setInterval(displayTiles, 10000);
 */
 
+            var old_arrows = [];
             window.timerId4 = setInterval(function() {
                 var request = $.ajax({
-                    url: config.uri + "/traffic/averageVelocities",
+                    url: config.uri + "/traffic/aggregates",
                     type: "GET",
                     connection: "keep-alive",
                     headers: {"Authorization": config.accessToken},
@@ -398,8 +399,36 @@
                     cache: false
                 });
 
-                request.done(function(averageVelocities) {
-                    window.averageVelocities = averageVelocities;
+                request.done(function(trafficAggregates) {
+
+                    for (var i = 0; i < old_arrows.length; i++)
+                    {
+                        old_arrows[i].setMap(null);
+                    }
+
+
+                    for(var i = 0; i < trafficAggregates.length; i++) {
+                        // Define a symbol using a predefined path (an arrow)
+                        // supplied by the Google Maps JavaScript API.
+                        var lineSymbol = {
+                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
+                        };
+
+                        // Create the polyline and add the symbol via the 'icons' property.
+                        var line = new google.maps.Polyline({
+                            path: [
+                                {lat: parseFloat(trafficAggregates[i].centerArrowY), lng: parseFloat(trafficAggregates[i].centerArrowX)},
+                                {lat: parseFloat(trafficAggregates[i].arrowHeadY), lng: parseFloat(trafficAggregates[i].arrowHeadX)}
+                                ],
+                            icons: [{
+                                icon: lineSymbol,
+                                offset: '100%'
+                            }],
+                            map: map
+                        });
+
+                        old_arrows.push(line);
+                    }
                 });
             }, 10000);
 

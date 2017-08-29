@@ -61,7 +61,7 @@ public class Noise {
     @RequestMapping(value = "/tiles", method = RequestMethod.GET)
     public ResponseEntity<?> tiles(@RequestParam Map<String, String> queryParams) {
 
-        MongoClient mongo = new MongoClient( "192.168.1.131" , 27017 );
+        MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );
         DB db = mongo.getDB("Noise");
         DBCollection collection = db.getCollection("NoiseTiles");
 

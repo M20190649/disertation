@@ -157,7 +157,7 @@ public class DashboardAnalyticsApp {
 
         //eventType, eventSource, carId, timestamp, latitude, longitude, velocityX, velocityY, occupancy
         String carId = parts[2];
-        Integer timeStamp = Integer.parseInt(parts[3]);
+        Long timeStamp = Long.parseLong(parts[3]);
         double latitude = Double.parseDouble(parts[4]);
         double longitude = Double.parseDouble(parts[5]);
         Vector2d velocity = new Vector2d(Double.parseDouble(parts[6]), Double.parseDouble(parts[7]));

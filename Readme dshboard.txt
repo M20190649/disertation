@@ -81,7 +81,7 @@ https://github.com/bmwcarit/barefoot/wiki#parameters
 
 
 Submit app:
-./bin/spark-submit   --class TrafficAnalyticsApp --master spark://52.201.248.251:7077   --executor-memory 1G   --total-executor-cores 10 --verbose  ~/traffic-analyzer-project-1.0-jar-with-dependencies.jar in out 127.0.0.1 5432 Disertation ubuntu 123 ~/road-types.json ~/traces.csv
+./bin/spark-submit   --class DashboardAnalyticsApp --master spark://34.233.214.65:7077   --executor-memory 1G   --total-executor-cores 10 --verbose  "/home/ubuntu/Desktop/disertation/Spark Application/target/analytics-project-1.0-jar-with-dependencies.jar"
 
 
 Postgres sql database name: Disertation; user: ubuntu; pass: 123 ?

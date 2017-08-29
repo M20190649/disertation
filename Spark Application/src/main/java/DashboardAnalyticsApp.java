@@ -48,17 +48,22 @@ Noise event - evenType,eventSources,latitude,longitude,value
 Car event - eventType, eventSource, carId, timestamp, latitude, longitude, velocity, occupancy
 */
 
-
-
 public class DashboardAnalyticsApp {
 
-  private static final double refLat = 44.3369102;
-  private static final double refLong = 25.950686;
+/*  private static final double refLat = 44.3369102;
+  private static final double refLong = 25.950686;*/
+  private static final double refLat = 37.704009;
+  private static final double refLong = -122.509851;
   private static final double tileSize = 500; // meters
 
 
 
   public static void main(String[] args) {
+
+    TrafficProcessing();
+    /*
+
+
     Config config = new Config();
 
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
@@ -117,7 +122,7 @@ public class DashboardAnalyticsApp {
     // Wait for 10 seconds then exit. To run forever call without a timeout
     jssc.awaitTermination();
     // Stop the streaming context
-    jssc.stop();
+    jssc.stop();*/
   }
 
   static void TrafficProcessing() {
@@ -134,7 +139,7 @@ public class DashboardAnalyticsApp {
     TilesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
     TilesMongoConfig.put("database", "DashboardAnalyticsDatabase");
     TilesMongoConfig.put("collection", "Traffic_Aggregates");
-    TilesMongoConfig.put("splitKey", "tileKey");
+    TilesMongoConfig.put("splitKey", "key");
     TilesMongoConfig.put("splitKeyType", "string");
 
 
@@ -148,7 +153,7 @@ public class DashboardAnalyticsApp {
     JavaPairDStream<String,  Tuple2<Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple2<Vector2d, Integer>>() {
       @Override
       public Tuple2<String, Tuple2<Vector2d, Integer>> call(Tuple2<String, String> tuple2) {
-        String[] parts = tuple2._2().split(";");
+        String[] parts = tuple2._2().split(" ");
 
         //eventType, eventSource, carId, timestamp, latitude, longitude, velocityX, velocityY, occupancy
         String carId = parts[2];
@@ -176,7 +181,7 @@ public class DashboardAnalyticsApp {
         int totalmetersY = (int) distance;
         int tileIdY = (int)totalmetersY / (int)tileSize;
 
-        String key = tileIdX + ":" + tileIdY; // timeStamp used in case two samples fall in same tile
+        String key = tileIdX + ":" + tileIdY;
 
         return new Tuple2<>(key, new Tuple2<>(velocity, 1)); // 1 is used for counting purposes
       }
@@ -188,7 +193,7 @@ public class DashboardAnalyticsApp {
               @Override
               public Iterable<Tuple2<Vector2d, Integer>> call(Iterable<Tuple2<Vector2d, Integer>> carVelocities) throws Exception {
                 double angleBetweenProjectionSegment = 360 / countCarVectorDirections;
-                List<Tuple2<Vector2d, Integer>> averageVelocitiesByDirection = new ArrayList<Tuple2<Vector2d, Integer>>();
+                List<Tuple2<Vector2d, Integer>> averageVelocitiesByDirection = new ArrayList<>();
 
 
                 for (Tuple2<Vector2d, Integer> carVelocity : carVelocities) {
@@ -210,14 +215,14 @@ public class DashboardAnalyticsApp {
                     Vector2d averageVelocity = averageVelocitiesByDirection.get(minAngleAverageVelocityId)._1();
 
                     int newCount = averageVelocitiesByDirection.get(minAngleAverageVelocityId)._2() + 1;
-                    double x = averageVelocity.x + carVelocity._1().x;
+                    double x = averageVelocity.x * (newCount - 1) + carVelocity._1().x;
                     x /= newCount;
-                    double y = averageVelocity.y + carVelocity._1().y;
+                    double y = averageVelocity.y * (newCount - 1)  + carVelocity._1().y;
                     y /= newCount;
 
                     Vector2d updatedAverageVelocity = new Vector2d(x, y);
 
-                    averageVelocitiesByDirection.set(minAngleAverageVelocityId, new Tuple2<Vector2d, Integer>(updatedAverageVelocity, newCount));
+                    averageVelocitiesByDirection.set(minAngleAverageVelocityId, new Tuple2<>(updatedAverageVelocity, newCount));
                   }
                 }
 
@@ -233,7 +238,7 @@ public class DashboardAnalyticsApp {
     // Generate the schema based on the string of schema
     List<StructField> fields2 = new ArrayList<StructField>();
     for (String fieldName: schemaString2.split(" ")) {
-      if(fieldName.equals("tileKey")) {
+      if(fieldName.equals("key")) {
         fields2.add(DataTypes.createStructField(fieldName, DataTypes.StringType, true));
       } else {
         fields2.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
@@ -261,12 +266,15 @@ public class DashboardAnalyticsApp {
 
           Map<String, Iterable<Tuple2<Vector2d, Integer>>> tiles = rdd.collectAsMap();
 
-          int directionNumber = 0;
           for (Map.Entry<String, Iterable<Tuple2<Vector2d, Integer>>> tile : tiles.entrySet())
           {
-            String key = tile.getKey() + ":" + directionNumber;
+            int directionNumber = 0;
 
             for(Tuple2<Vector2d, Integer> velocityTuple: tile.getValue()) {
+
+              String key = tile.getKey() + ":" + directionNumber;
+              directionNumber++;
+
               // Average per tile
               Row row = RowFactory.create(key,
                       velocityTuple._1().x,

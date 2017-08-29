@@ -2,6 +2,7 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import org.geotools.referencing.GeodeticCalculator;
+import scala.collection.immutable.Seq$;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -15,6 +16,10 @@ public class TrafficTraceProducer implements Runnable {
     private String m_nFileLocation;
 
     final static String trafficTopic = "traffic";
+
+    final static String eventType = "trafficSample";
+
+    final static String eventSource = "SanFranciscoTraces";
 
     public TrafficTraceProducer(String a_nFileLocation) {
         m_nFileLocation = a_nFileLocation;
@@ -124,7 +129,8 @@ public class TrafficTraceProducer implements Runnable {
                         velocityX,
                         velocityY);
 
-                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, "keyForPartitioning", trafficObject.toString());
+                String message = eventType + " " + eventSource + " " + trafficObject;
+                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, "keyForPartitioning", message);
                 producer.send(data);
 
             }

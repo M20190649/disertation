@@ -18,6 +18,6 @@ public class TrafficObject {
     }
 
     public String toString() {
-        return String.format("%s %f %f %f %f %d %d", carId, latitude, longitude, velocityX, velocityY, occupancy, timestamp);
+        return String.format("%s %d %f %f %f %f %d", carId, timestamp, latitude, longitude, velocityX, velocityY, occupancy);
     }
 }

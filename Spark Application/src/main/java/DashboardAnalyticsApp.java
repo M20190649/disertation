@@ -371,7 +371,7 @@ public class DashboardAnalyticsApp {
     }).dstream();
 
     final int numberOfClusters = 3;
-    ArrayList<org.apache.spark.mllib.linalg.Vector> initialClusterCenters = new ArrayList<org.apache.spark.mllib.linalg.Vector>();
+    org.apache.spark.mllib.linalg.Vector[] initialClusterCenters = new org.apache.spark.mllib.linalg.Vector[numberOfClusters];
     double[] weights = new double[numberOfClusters];
     Random random = new Random();
 
@@ -385,13 +385,13 @@ public class DashboardAnalyticsApp {
       calc.setDirection(angle, 10000); // 10 km
       Point2D clusterCenter = calc.getDestinationGeographicPoint();
 
-      initialClusterCenters.add(Vectors.dense(clusterCenter.getX(), clusterCenter.getY()));
+      initialClusterCenters[i] = Vectors.dense(clusterCenter.getX(), clusterCenter.getY());
       weights[i] = 1;
     }
 
     StreamingKMeans streamingKMeans = new StreamingKMeans()
             .setK(3)
-            .setInitialCenters((org.apache.spark.mllib.linalg.Vector[])initialClusterCenters.toArray(), weights)
+            .setInitialCenters(initialClusterCenters, weights)
             .setDecayFactor(0.5);
     streamingKMeans.trainOn(taxiPickupsFeatures);
 

@@ -25,6 +25,8 @@ https://spark.apache.org/docs/2.1.0/spark-standalone.html
 ./sbin/start-master.sh
 ./sbin/start-slave.sh  spark://<spark_url>:7077
 
+./sbin/start-slave.sh spark://ip-172-31-7-204:7077
+
 sbin/stop-master.sh
 sbin/stop-slaves.sh - see conf/slaves
 sbin/stop-all.sh

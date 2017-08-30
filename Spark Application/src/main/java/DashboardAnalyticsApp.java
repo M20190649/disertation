@@ -1,4 +1,5 @@
 
+import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.Vector;
 
@@ -369,7 +370,29 @@ public class DashboardAnalyticsApp {
       }
     }).dstream();
 
-    StreamingKMeans streamingKMeans = new StreamingKMeans().setK(3).setDecayFactor(0.5);
+    final int numberOfClusters = 3;
+    ArrayList<org.apache.spark.mllib.linalg.Vector> initialClusterCenters = new ArrayList<org.apache.spark.mllib.linalg.Vector>();
+    double[] weights = new double[numberOfClusters];
+    Random random = new Random();
+
+    for(int i = 0; i < numberOfClusters; i++) {
+      int angle = random.nextInt(360);
+
+      GeodeticCalculator calc = new GeodeticCalculator();
+
+      // Get left lower corner of tile
+      calc.setStartingGeographicPoint(refLat, refLong);
+      calc.setDirection(angle, 10000); // 10 km
+      Point2D clusterCenter = calc.getDestinationGeographicPoint();
+
+      initialClusterCenters.add(Vectors.dense(clusterCenter.getX(), clusterCenter.getY()));
+      weights[i] = 1;
+    }
+    
+    StreamingKMeans streamingKMeans = new StreamingKMeans()
+            .setK(3)
+            .setInitialCenters((org.apache.spark.mllib.linalg.Vector[])initialClusterCenters.toArray(), weights)
+            .setDecayFactor(0.5);
     streamingKMeans.trainOn(taxiPickupsFeatures);
 
     org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.model().clusterCenters();

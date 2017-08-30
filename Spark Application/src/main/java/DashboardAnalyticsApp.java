@@ -11,6 +11,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.mllib.clustering.KMeans;
+import org.apache.spark.mllib.clustering.KMeansModel;
 import org.apache.spark.mllib.clustering.StreamingKMeans;
 import org.apache.spark.mllib.linalg.*;
 import org.apache.spark.sql.types.IntegerType;
@@ -167,7 +169,7 @@ public class DashboardAnalyticsApp {
     Config config = new Config();
 
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
-    JavaSparkContext sc = new JavaSparkContext(conf);
+    final JavaSparkContext sc = new JavaSparkContext(conf);
 
     JavaStreamingContext jssc = new JavaStreamingContext(sc, new Duration(10000));
 
@@ -356,7 +358,14 @@ public class DashboardAnalyticsApp {
       }
     });
 
-    DStream<org.apache.spark.mllib.linalg.Vector> taxiPickupsFeatures = taxiPickups.map(new Function<Tuple2<String, String>, org.apache.spark.mllib.linalg.Vector>() {
+
+    final Map KMeansClustersMongoConfig = new HashMap();
+    KMeansClustersMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    KMeansClustersMongoConfig.put("database", "DashboardAnalyticsDatabase");
+    KMeansClustersMongoConfig.put("collection", "Traffic_Clusters_KMeans");
+
+    //DStream<org.apache.spark.mllib.linalg.Vector> taxiPickupsFeatures =
+            taxiPickups.map(new Function<Tuple2<String, String>, org.apache.spark.mllib.linalg.Vector>() {
       @Override
       public org.apache.spark.mllib.linalg.Vector call(Tuple2<String, String> v1) throws Exception {
         String[] parts = v1._2().split(" ");
@@ -368,9 +377,53 @@ public class DashboardAnalyticsApp {
 
         return vector;
       }
-    }).dstream();
+    }).foreachRDD(new Function<JavaRDD<org.apache.spark.mllib.linalg.Vector>, Void>() {
+      @Override
+      public Void call(JavaRDD<org.apache.spark.mllib.linalg.Vector> rdd) throws Exception {
 
-    final int numberOfClusters = 3;
+        if(!rdd.partitions().isEmpty()) {
+          SQLContext sqlContext = SQLContext.getOrCreate(rdd.context());
+
+          // Cluster the data into two classes using KMeans
+          int numClusters = 3;
+          int numIterations = 20;
+          KMeansModel clusters = KMeans.train(rdd.rdd(), numClusters, numIterations);
+
+
+          // The schema is encoded in a string
+          // key = tilekey:directon number to avoid collisions
+          String schemaKMeansClustersString = "latitude longitude taxiActionType";
+
+          // Generate the schema based on the string of schema
+          List<StructField> KMeansClusterFields = new ArrayList<StructField>();
+          for (String fieldName : schemaKMeansClustersString.split(" ")) {
+            if (fieldName.equals("taxiActionType")) {
+              KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.IntegerType, true));
+            } else {
+              KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
+            }
+          }
+
+          final StructType schemaKMeansClusters = DataTypes.createStructType(KMeansClusterFields);
+
+          ArrayList<Row> rows = new ArrayList<>();
+          for (org.apache.spark.mllib.linalg.Vector clusterCenter : clusters.clusterCenters()) {
+            // Average per tile
+            Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup.getValue());
+            rows.add(row);
+          }
+
+          JavaRDD<Row> rowRDD = sc.parallelize(rows);
+          DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schemaKMeansClusters);
+
+          dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Append).options(KMeansClustersMongoConfig).save();
+        }
+
+        return null;
+      }
+    });
+
+ /*   final int numberOfClusters = 3;
     org.apache.spark.mllib.linalg.Vector[] initialClusterCenters = new org.apache.spark.mllib.linalg.Vector[numberOfClusters];
     double[] weights = new double[numberOfClusters];
     Random random = new Random();
@@ -400,7 +453,7 @@ public class DashboardAnalyticsApp {
     while(n != 0) {
 
       n--;
-      
+
       org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.latestModel().clusterCenters();
 
       final Map KMeansClustersMongoConfig = new HashMap();
@@ -444,7 +497,7 @@ public class DashboardAnalyticsApp {
       catch (Exception e) {
         System.out.println(e.getStackTrace());
       }
-    }
+    }*/
 
     jssc.start();
     // Wait for 10 seconds then exit. To run forever call without a timeout

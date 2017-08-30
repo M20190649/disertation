@@ -395,42 +395,56 @@ public class DashboardAnalyticsApp {
             .setDecayFactor(0.5);
     streamingKMeans.trainOn(taxiPickupsFeatures);
 
-    org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.model().clusterCenters();
 
-    final Map KMeansClustersMongoConfig = new HashMap();
-    KMeansClustersMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
-    KMeansClustersMongoConfig.put("database", "DashboardAnalyticsDatabase");
-    KMeansClustersMongoConfig.put("collection", "Traffic_Clusters_KMeans");
+    int n = 10;
+    while(n != 0) {
 
-    // The schema is encoded in a string
-    // key = tilekey:directon number to avoid collisions
-    String schemaKMeansClustersString = "latitude longitude taxiActionType";
+      n--;
+      
+      org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.latestModel().clusterCenters();
 
-    // Generate the schema based on the string of schema
-    List<StructField> KMeansClusterFields = new ArrayList<StructField>();
-    for (String fieldName: schemaKMeansClustersString.split(" ")) {
-    if (fieldName.equals("taxiActionType")) {
-      KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.IntegerType, true));
-      } else {
-      KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
+      final Map KMeansClustersMongoConfig = new HashMap();
+      KMeansClustersMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+      KMeansClustersMongoConfig.put("database", "DashboardAnalyticsDatabase");
+      KMeansClustersMongoConfig.put("collection", "Traffic_Clusters_KMeans");
+
+      // The schema is encoded in a string
+      // key = tilekey:directon number to avoid collisions
+      String schemaKMeansClustersString = "latitude longitude taxiActionType";
+
+      // Generate the schema based on the string of schema
+      List<StructField> KMeansClusterFields = new ArrayList<StructField>();
+      for (String fieldName: schemaKMeansClustersString.split(" ")) {
+        if (fieldName.equals("taxiActionType")) {
+          KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.IntegerType, true));
+        } else {
+          KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
+        }
+      }
+
+      final StructType schemaKMeansClusters = DataTypes.createStructType(KMeansClusterFields);
+
+      ArrayList<Row> rows = new ArrayList<>();
+      for(org.apache.spark.mllib.linalg.Vector clusterCenter: clusterCenters) {
+        // Average per tile
+        Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup.getValue());
+        rows.add(row);
+      }
+
+      JavaRDD<Row> rowRDD = sc.parallelize(rows);
+
+      SQLContext sqlContext = new SQLContext(sc);
+      DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schemaKMeansClusters);
+
+      dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Append).options(KMeansClustersMongoConfig).save();
+
+      try {
+        Thread.sleep(10000);
+      }
+      catch (Exception e) {
+        System.out.println(e.getStackTrace());
       }
     }
-
-    final StructType schemaKMeansClusters = DataTypes.createStructType(KMeansClusterFields);
-
-    ArrayList<Row> rows = new ArrayList<>();
-    for(org.apache.spark.mllib.linalg.Vector clusterCenter: clusterCenters) {
-      // Average per tile
-      Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup.getValue());
-      rows.add(row);
-    }
-
-    JavaRDD<Row> rowRDD = sc.parallelize(rows);
-
-    SQLContext sqlContext = new SQLContext(sc);
-    DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schemaKMeansClusters);
-
-    dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Append).options(KMeansClustersMongoConfig).save();
 
     jssc.start();
     // Wait for 10 seconds then exit. To run forever call without a timeout

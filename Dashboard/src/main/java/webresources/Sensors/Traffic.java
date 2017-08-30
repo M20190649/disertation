@@ -89,4 +89,28 @@ public class Traffic {
 
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
+
+    @RequestMapping(value = "/pickupclusters", method = RequestMethod.GET)
+    public ResponseEntity<?> pickupClusters(@RequestParam Map<String, String> queryParams) {
+
+        MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );
+        DB db = mongo.getDB("DashboardAnalyticsDatabase");
+        DBCollection collection = db.getCollection("Traffic_Clusters_KMeans");
+
+        List<DBObject> results = new ArrayList<DBObject>();
+
+        DBCursor cursor = collection.find();
+        try {
+            while(cursor.hasNext()) {
+                BasicDBObject obj = (BasicDBObject) cursor.next();
+                results.add(obj);
+            }
+        } finally {
+            cursor.close();
+        }
+
+
+        return new ResponseEntity<>(results, HttpStatus.OK);
+    }
+
 }

@@ -1,5 +1,6 @@
 
 import java.util.*;
+import java.util.Vector;
 
 import org.apache.avro.echo.Pong;
 import org.apache.spark.api.java.*;
@@ -9,14 +10,19 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.mllib.clustering.StreamingKMeans;
+import org.apache.spark.mllib.linalg.*;
+import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
+import org.apache.spark.streaming.dstream.DStream;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 
 import org.geotools.referencing.GeodeticCalculator;
+import scala.Array;
 import scala.Tuple2;
 
 import org.apache.spark.sql.*;
@@ -43,6 +49,32 @@ import scala.Tuple4;
 import javax.measure.quantity.Velocity;
 import javax.vecmath.Point2d;
 import javax.vecmath.Vector2d;
+
+
+enum TaxiAction {
+  Other(0),
+  Pickup(1),
+  Dropoff(2);
+
+  private int value;
+
+  private TaxiAction(int value) {
+    this.value = value;
+  }
+
+  public static TaxiAction fromValue(int value) {
+    for (TaxiAction type : TaxiAction.values()) {
+      if (type.getValue() == value) {
+        return type;
+      }
+    }
+    return null;
+  }
+
+  public int getValue() {
+    return value;
+  }
+}
 
 
 /*
@@ -151,6 +183,8 @@ public class DashboardAnalyticsApp {
 
     JavaPairReceiverInputDStream<String, String> messages =
             KafkaUtils.createStream(jssc, config.kafkaHost + ":" + config.kafkaPort, config.kafkaGroup, topicMap);
+
+    messages.cache(); // ? check if this stream is duplicated
 
     // key = tileIdX + ":" + tileIdY;
     JavaPairDStream<String, Tuple3<Point2d, Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple3<Point2d, Vector2d, Integer>>() {
@@ -309,6 +343,71 @@ public class DashboardAnalyticsApp {
         return null;
       }
     });
+
+
+    JavaPairDStream<String, String> taxiPickups = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
+      @Override
+      public Boolean call(Tuple2<String, String> v1) throws Exception {
+        String[] parts = v1._2().split(" ");
+        TaxiAction taxiAction = TaxiAction.fromValue(Integer.parseInt(parts[8]));
+
+        return taxiAction == TaxiAction.Pickup;
+      }
+    });
+
+    DStream<org.apache.spark.mllib.linalg.Vector> taxiPickupsFeatures = taxiPickups.map(new Function<Tuple2<String, String>, org.apache.spark.mllib.linalg.Vector>() {
+      @Override
+      public org.apache.spark.mllib.linalg.Vector call(Tuple2<String, String> v1) throws Exception {
+        String[] parts = v1._2().split(" ");
+
+        double latitude = Double.parseDouble(parts[4]);
+        double longitude = Double.parseDouble(parts[5]);
+
+        org.apache.spark.mllib.linalg.Vector vector = Vectors.dense(latitude, longitude);
+
+        return vector;
+      }
+    }).dstream();
+
+    StreamingKMeans streamingKMeans = new StreamingKMeans().setK(3).setDecayFactor(0.5);
+    streamingKMeans.trainOn(taxiPickupsFeatures);
+
+    org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.model().clusterCenters();
+
+    final Map KMeansClustersMongoConfig = new HashMap();
+    TilesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    TilesMongoConfig.put("database", "DashboardAnalyticsDatabase");
+    TilesMongoConfig.put("collection", "Traffic_Clusters_KMeans");
+
+    // The schema is encoded in a string
+    // key = tilekey:directon number to avoid collisions
+    String schemaKMeansClustersString = "latitude longitude taxiActionType";
+
+    // Generate the schema based on the string of schema
+    List<StructField> KMeansClusterFields = new ArrayList<StructField>();
+    for (String fieldName: schemaKMeansClustersString.split(" ")) {
+    if (fieldName.equals("taxiActionType")) {
+      KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.IntegerType, true));
+      } else {
+      KMeansClusterFields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
+      }
+    }
+
+    final StructType schemaKMeansClusters = DataTypes.createStructType(KMeansClusterFields);
+
+    ArrayList<Row> rows = new ArrayList<>();
+    for(org.apache.spark.mllib.linalg.Vector clusterCenter: clusterCenters) {
+      // Average per tile
+      Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup);
+      rows.add(row);
+    }
+
+    JavaRDD<Row> rowRDD = sc.parallelize(rows);
+
+    SQLContext sqlContext = new SQLContext(sc);
+    DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schemaKMeansClusters);
+
+    dataFrame.write().format("com.stratio.datasource.mongodb").mode(SaveMode.Append).options(KMeansClustersMongoConfig).save();
 
     jssc.start();
     // Wait for 10 seconds then exit. To run forever call without a timeout

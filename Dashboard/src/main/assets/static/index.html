@@ -435,6 +435,44 @@
             whenAvailable("HeatmapOverlay",init_heatmap);
         }
 
+
+        var old_pickup_markers = [];
+        window.timerId4 = setInterval(function() {
+            var request = $.ajax({
+                url: config.uri + "/traffic/pickupclusters",
+                type: "GET",
+                connection: "keep-alive",
+                headers: {"Authorization": config.accessToken},
+                contentType: "application/json",
+                dataType: "json",
+                cache: false
+            });
+
+            request.done(function(pickupClusters) {
+
+                for (var i = 0; i < old_pickup_markers.length; i++)
+                {
+                    old_pickup_markers[i].setMap(null);
+                }
+
+
+                for(var i = 0; i < pickupClusters.length; i++) {
+                    var myLatLng = {lat: pickupClusters[i].latitude, lng: pickupClusters[i].longitude};
+
+                    var marker = new google.maps.Marker({
+                        position: myLatLng,
+                        map: map,
+                        title: 'Taxi cluster'
+                    });
+
+                    old_pickup_markers.push(marker);
+                }
+            });
+        }, 10000);
+
+        whenAvailable("HeatmapOverlay",init_heatmap);
+        }
+
         function init_heatmap() {
 
             google.maps.event.addListener(map, 'zoom_changed', function() {

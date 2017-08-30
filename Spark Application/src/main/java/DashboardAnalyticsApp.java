@@ -421,7 +421,7 @@ public class DashboardAnalyticsApp {
     ArrayList<Row> rows = new ArrayList<>();
     for(org.apache.spark.mllib.linalg.Vector clusterCenter: clusterCenters) {
       // Average per tile
-      Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup);
+      Row row = RowFactory.create(clusterCenter.toArray()[0], clusterCenter.toArray()[1], TaxiAction.Pickup.getValue());
       rows.add(row);
     }
 

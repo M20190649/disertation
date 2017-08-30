@@ -381,14 +381,14 @@ public class DashboardAnalyticsApp {
       GeodeticCalculator calc = new GeodeticCalculator();
 
       // Get left lower corner of tile
-      calc.setStartingGeographicPoint(refLat, refLong);
+      calc.setStartingGeographicPoint(refLong, refLat);
       calc.setDirection(angle, 10000); // 10 km
       Point2D clusterCenter = calc.getDestinationGeographicPoint();
 
       initialClusterCenters.add(Vectors.dense(clusterCenter.getX(), clusterCenter.getY()));
       weights[i] = 1;
     }
-    
+
     StreamingKMeans streamingKMeans = new StreamingKMeans()
             .setK(3)
             .setInitialCenters((org.apache.spark.mllib.linalg.Vector[])initialClusterCenters.toArray(), weights)

@@ -376,7 +376,7 @@ public class DashboardAnalyticsApp {
     Random random = new Random();
 
     for(int i = 0; i < numberOfClusters; i++) {
-      int angle = random.nextInt(360);
+      int angle = random.nextInt(360) - 180;
 
       GeodeticCalculator calc = new GeodeticCalculator();
 

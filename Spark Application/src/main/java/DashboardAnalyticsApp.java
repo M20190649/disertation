@@ -1,5 +1,7 @@
 
 import java.util.*;
+
+import org.apache.avro.echo.Pong;
 import org.apache.spark.api.java.*;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
@@ -35,6 +37,7 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.Row;
 // Import RowFactory.
 import org.apache.spark.sql.RowFactory;
+import scala.Tuple3;
 import scala.Tuple4;
 
 import javax.measure.quantity.Velocity;
@@ -150,9 +153,9 @@ public class DashboardAnalyticsApp {
             KafkaUtils.createStream(jssc, config.kafkaHost + ":" + config.kafkaPort, config.kafkaGroup, topicMap);
 
     // key = tileIdX + ":" + tileIdY;
-    JavaPairDStream<String,  Tuple2<Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple2<Vector2d, Integer>>() {
+    JavaPairDStream<String, Tuple3<Point2d, Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple3<Point2d, Vector2d, Integer>>() {
       @Override
-      public Tuple2<String, Tuple2<Vector2d, Integer>> call(Tuple2<String, String> tuple2) {
+      public Tuple2<String, Tuple3<Point2d, Vector2d, Integer>> call(Tuple2<String, String> tuple2) {
         String[] parts = tuple2._2().split(" ");
 
         //eventType, eventSource, carId, timestamp, latitude, longitude, velocityX, velocityY, occupancy
@@ -161,6 +164,7 @@ public class DashboardAnalyticsApp {
         double latitude = Double.parseDouble(parts[4]);
         double longitude = Double.parseDouble(parts[5]);
         Vector2d velocity = new Vector2d(Double.parseDouble(parts[6]), Double.parseDouble(parts[7]));
+        Point2d position = new Point2d(latitude, longitude);
 
         GeodeticCalculator gc = new GeodeticCalculator();
 
@@ -183,57 +187,64 @@ public class DashboardAnalyticsApp {
 
         String key = tileIdX + ":" + tileIdY;
 
-        return new Tuple2<>(key, new Tuple2<>(velocity, 1)); // 1 is used for counting purposes
+        return new Tuple2<>(key, new Tuple3<>(position, velocity, 1)); // 1 is used for counting purposes
       }
     });
 
-    JavaPairDStream<String, Iterable<Tuple2<Vector2d, Integer>>> aggregationOfTraffic = perTileAggregationOfTraffic
+    JavaPairDStream<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>> aggregationOfTraffic = perTileAggregationOfTraffic
             .groupByKey()
-            .mapValues(new Function<Iterable<Tuple2<Vector2d, Integer>>, Iterable<Tuple2<Vector2d, Integer>>>() {
+            .mapValues(new Function<Iterable<Tuple3<Point2d, Vector2d, Integer>>, Iterable<Tuple3<Point2d, Vector2d, Integer>>>() {
               @Override
-              public Iterable<Tuple2<Vector2d, Integer>> call(Iterable<Tuple2<Vector2d, Integer>> carVelocities) throws Exception {
+              public Iterable<Tuple3<Point2d, Vector2d, Integer>> call(Iterable<Tuple3<Point2d, Vector2d, Integer>> carSamples) throws Exception {
                 double angleBetweenProjectionSegment = 360 / countCarVectorDirections;
-                List<Tuple2<Vector2d, Integer>> averageVelocitiesByDirection = new ArrayList<>();
+                List<Tuple3<Point2d, Vector2d, Integer>> aggregationsByDirection = new ArrayList<>();
 
 
-                for (Tuple2<Vector2d, Integer> carVelocity : carVelocities) {
-                  if (averageVelocitiesByDirection.size() < countCarVectorDirections) {
-                    averageVelocitiesByDirection.add(carVelocity);
+                for (Tuple3<Point2d, Vector2d, Integer> carSample : carSamples) {
+                  if (aggregationsByDirection.size() < countCarVectorDirections) {
+                    aggregationsByDirection.add(carSample);
                   } else {
-                    int minAngleAverageVelocityId = 0; // de ce a dat eroare la -1 ?
+                    int minAngleAverageVelocityCarSampleId = 0; // de ce a dat eroare la -1 ? ;
                     double minAngleValue = 360;
 
-                    for (int i = 0; i < averageVelocitiesByDirection.size(); i++) {
-                      Vector2d averageVelocity = averageVelocitiesByDirection.get(i)._1();
-                      if (angleVectors(averageVelocity, carVelocity._1()) < minAngleValue &&
-                              angleVectors(averageVelocity, carVelocity._1()) <= angleBetweenProjectionSegment) {
-                        minAngleAverageVelocityId = i;
-                        minAngleValue = angleVectors(averageVelocity, carVelocity._1());
+                    for (int i = 0; i < aggregationsByDirection.size(); i++) {
+                      Vector2d averageVelocity = aggregationsByDirection.get(i)._2();
+                      if (angleVectors(averageVelocity, carSample._2()) < minAngleValue &&
+                              angleVectors(averageVelocity, carSample._2()) <= angleBetweenProjectionSegment) {
+                        minAngleAverageVelocityCarSampleId = i;
+                        minAngleValue = angleVectors(averageVelocity, carSample._2());
                       }
                     }
 
-                    Vector2d averageVelocity = averageVelocitiesByDirection.get(minAngleAverageVelocityId)._1();
+                    Vector2d averageVelocity = aggregationsByDirection.get(minAngleAverageVelocityCarSampleId)._2();
+                    Point2d averagePosition = aggregationsByDirection.get(minAngleAverageVelocityCarSampleId)._1();
 
-                    int newCount = averageVelocitiesByDirection.get(minAngleAverageVelocityId)._2() + 1;
-                    double x = averageVelocity.x * (newCount - 1) + carVelocity._1().x;
-                    x /= newCount;
-                    double y = averageVelocity.y * (newCount - 1)  + carVelocity._1().y;
-                    y /= newCount;
+                    int newCount = aggregationsByDirection.get(minAngleAverageVelocityCarSampleId)._3() + 1;
+                    double velocityX = averageVelocity.x * (newCount - 1) + carSample._2().x;
+                    velocityX /= newCount;
+                    double velocityY = averageVelocity.y * (newCount - 1)  + carSample._2().y;
+                    velocityY /= newCount;
 
-                    Vector2d updatedAverageVelocity = new Vector2d(x, y);
+                    double positionX = averagePosition.x * (newCount - 1) + carSample._1().x;
+                    positionX /= newCount;
+                    double positionY = averagePosition.y * (newCount - 1)  + carSample._1().y;
+                    positionY /= newCount;
 
-                    averageVelocitiesByDirection.set(minAngleAverageVelocityId, new Tuple2<>(updatedAverageVelocity, newCount));
+                    Vector2d updatedAverageVelocity = new Vector2d(velocityX, velocityY);
+                    Point2d updatedPosition = new Point2d(positionX, positionY);
+
+                    aggregationsByDirection.set(minAngleAverageVelocityCarSampleId, new Tuple3<>(updatedPosition, updatedAverageVelocity, newCount));
                   }
                 }
 
-                return averageVelocitiesByDirection;
+                return aggregationsByDirection;
               }
             });
 
 
     // The schema is encoded in a string
     // key = tilekey:directon number to avoid collisions
-    String schemaString2 = "key avgVelocityX avgVelocityY CountCarsForAverageVelocity";
+    String schemaString2 = "key averagePositionX averagePositionY avgVelocityX avgVelocityY CountCarsForAverageVelocity";
 
     // Generate the schema based on the string of schema
     List<StructField> fields2 = new ArrayList<StructField>();
@@ -249,16 +260,16 @@ public class DashboardAnalyticsApp {
     }
     final StructType schema2 = DataTypes.createStructType(fields2);
 
-    aggregationOfTraffic.foreachRDD(new Function<JavaPairRDD<String, Iterable<Tuple2<Vector2d, Integer>>>, Void>() {
-      public Void call(JavaPairRDD<String, Iterable<Tuple2<Vector2d, Integer>>> rdd) {
+    aggregationOfTraffic.foreachRDD(new Function<JavaPairRDD<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>>, Void>() {
+      public Void call(JavaPairRDD<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>> rdd) {
 
         if(!rdd.partitions().isEmpty()) {
 
           SQLContext sqlContext = SQLContext.getOrCreate(rdd.context());
 
-          List<String> keys = rdd.map(new Function<Tuple2<String,Iterable<Tuple2<Vector2d,Integer>>>, String>() {
+          List<String> keys = rdd.map(new Function<Tuple2<String,Iterable<Tuple3<Point2d, Vector2d,Integer>>>, String>() {
             @Override
-            public String call(Tuple2<String, Iterable<Tuple2<Vector2d, Integer>>> v1) throws Exception {
+            public String call(Tuple2<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>> v1) throws Exception {
               return v1._1();
             }
           }).collect();
@@ -267,22 +278,24 @@ public class DashboardAnalyticsApp {
             return null;
           }
 
-          Map<String, Iterable<Tuple2<Vector2d, Integer>>> tiles = rdd.collectAsMap();
+          Map<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>> tiles = rdd.collectAsMap();
 
-          for (Map.Entry<String, Iterable<Tuple2<Vector2d, Integer>>> tile : tiles.entrySet())
+          for (Map.Entry<String, Iterable<Tuple3<Point2d, Vector2d, Integer>>> tile : tiles.entrySet())
           {
             int directionNumber = 0;
 
-            for(Tuple2<Vector2d, Integer> velocityTuple: tile.getValue()) {
+            for(Tuple3<Point2d, Vector2d, Integer> aggregationTuple: tile.getValue()) {
 
               String key = tile.getKey() + ":" + directionNumber;
               directionNumber++;
 
               // Average per tile
               Row row = RowFactory.create(key,
-                      velocityTuple._1().x,
-                      velocityTuple._1().y,
-                      velocityTuple._2());
+                      aggregationTuple._1().x,
+                      aggregationTuple._1().y,
+                      aggregationTuple._2().x,
+                      aggregationTuple._2().y,
+                      aggregationTuple._3());
 
               JavaSparkContext sc = new JavaSparkContext(rdd.context());
               JavaRDD<Row> rowRDD = sc.parallelize(Arrays.asList(row));

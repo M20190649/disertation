@@ -55,6 +55,8 @@ public class TrafficTraceProducer implements Runnable {
             double previousLat = 0;
             double previousLong = 0;
             long previousTimeStamp = 0;
+            int previousOccupancy = -1;
+            TaxiAction taxiAction = TaxiAction.Other;
 
             int currentDay = new java.util.Date().getDay();
 
@@ -64,6 +66,7 @@ public class TrafficTraceProducer implements Runnable {
 
                 double latitude = Double.parseDouble(parts[0]);
                 double longitude = Double.parseDouble(parts[1]);
+                int occupancy = Integer.parseInt(parts[2]);
 
                 long timestamp = Long.parseLong(parts[3]);
 
@@ -121,13 +124,26 @@ public class TrafficTraceProducer implements Runnable {
                     previousTimeStamp = translatedTimestamp;
                 }
 
+                if(previousOccupancy != -1) {
+                    if(previousOccupancy != occupancy) {
+                        if(occupancy == 0) {
+                            taxiAction = TaxiAction.Dropoff;
+                        } else {
+                            taxiAction = TaxiAction.Pickup;
+                        }
+                    }
+                }
+
+                previousOccupancy = occupancy;
+
                 TrafficObject trafficObject = new TrafficObject(UUID.randomUUID().toString() + ":" + day,
                         latitude,
                         longitude,
-                        Integer.parseInt(parts[2]),
+                        occupancy,
                         translatedTimestamp,
                         velocityX,
-                        velocityY);
+                        velocityY,
+                        taxiAction);
 
                 String message = eventType + " " + eventSource + " " + trafficObject;
                 KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, "keyForPartitioning", message);

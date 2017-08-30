@@ -41,7 +41,7 @@ public class Traffic {
                 int tileX = Integer.parseInt(obj.getString("key").split(":")[0]);
                 int tileY = Integer.parseInt(obj.getString("key").split(":")[1]);
 
-                GeodeticCalculator calc = new GeodeticCalculator();
+     /*           GeodeticCalculator calc = new GeodeticCalculator();
 
                 // Get left lower corner of tile
                 calc.setStartingGeographicPoint(refLong, refLat);
@@ -60,13 +60,17 @@ public class Traffic {
                 // Get left upper corner of tile
                 calc.setStartingGeographicPoint(center);
                 calc.setDirection(0, tileSize / 2);
-                center = calc.getDestinationGeographicPoint();
+                center = calc.getDestinationGeographicPoint();*/
+
+                Point2D center =  new Point2D.Double(obj.getDouble("averagePositionX"), obj.getDouble("averagePositionY"));
 
                 obj.put("centerArrowX", center.getX());
                 obj.put("centerArrowY", center.getY());
 
+                GeodeticCalculator calc = new GeodeticCalculator();
+
                 calc.setStartingGeographicPoint(center);
-                calc.setDirection(90, (obj.getDouble("avgVelocityX") / 100 ) * (tileSize / 2));
+                calc.setDirection(90, (obj.getDouble("avgVelocityX") / 100 ) * (tileSize / 2)); // some hack to get the arrow size
                 Point2D velocityArrowHead = calc.getDestinationGeographicPoint();
 
                 calc.setStartingGeographicPoint(velocityArrowHead);

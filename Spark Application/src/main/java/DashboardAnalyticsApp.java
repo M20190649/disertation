@@ -398,9 +398,9 @@ public class DashboardAnalyticsApp {
     org.apache.spark.mllib.linalg.Vector[] clusterCenters = streamingKMeans.model().clusterCenters();
 
     final Map KMeansClustersMongoConfig = new HashMap();
-    TilesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
-    TilesMongoConfig.put("database", "DashboardAnalyticsDatabase");
-    TilesMongoConfig.put("collection", "Traffic_Clusters_KMeans");
+    KMeansClustersMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    KMeansClustersMongoConfig.put("database", "DashboardAnalyticsDatabase");
+    KMeansClustersMongoConfig.put("collection", "Traffic_Clusters_KMeans");
 
     // The schema is encoded in a string
     // key = tilekey:directon number to avoid collisions

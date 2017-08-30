@@ -99,7 +99,13 @@ public class Traffic {
 
         List<DBObject> results = new ArrayList<DBObject>();
 
-        DBCursor cursor = collection.find();
+        int numberOfCluster = Integer.parseInt(queryParams.get("numberOfClusters"));
+
+        BasicDBObject order = new BasicDBObject();
+        order.append("_id", -1);
+
+        DBCursor cursor  = collection.find().sort(order).limit(numberOfCluster);
+
         try {
             while(cursor.hasNext()) {
                 BasicDBObject obj = (BasicDBObject) cursor.next();

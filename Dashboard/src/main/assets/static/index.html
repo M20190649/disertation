@@ -439,7 +439,7 @@
         var old_pickup_markers = [];
         window.timerId4 = setInterval(function() {
             var request = $.ajax({
-                url: config.uri + "/traffic/pickupclusters",
+                url: config.uri + "/traffic/pickupclusters?numberOfClusters=3",
                 type: "GET",
                 connection: "keep-alive",
                 headers: {"Authorization": config.accessToken},
@@ -470,8 +470,6 @@
             });
         }, 10000);
 
-        whenAvailable("HeatmapOverlay",init_heatmap);
-        }
 
         function init_heatmap() {
 

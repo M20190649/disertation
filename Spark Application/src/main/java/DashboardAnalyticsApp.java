@@ -348,7 +348,7 @@ public class DashboardAnalyticsApp {
     });
 
 
-    JavaPairDStream<String, String> taxiPickups = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
+    JavaPairDStream<String, String> taxiPickups = messages.window(new Duration(30000), new Duration(10000)).filter(new Function<Tuple2<String, String>, Boolean>() {
       @Override
       public Boolean call(Tuple2<String, String> v1) throws Exception {
         String[] parts = v1._2().split(" ");

@@ -44,22 +44,26 @@ public class SensorDataProducer implements Runnable {
         for (long nEvents = 0; nEvents < events; nEvents++) {
             Calendar cal = Calendar.getInstance();
 
+            private static final double refLat = 37.704009;
+            private static final double refLong = -122.509851;
+            37.8408570, -122.3386317
+
             String msg;
             if(nEvents % 100 == 0) {
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
-                        RandomUtils.nextFloat((float) 44.5005622, (float) 44.5028918),
-                        RandomUtils.nextFloat((float) 26.095008, (float) 26.1294057),
+                        RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
+                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
                         RandomUtils.nextFloat(120, 150));
             } else if(nEvents % 200 == 0) {
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
-                        RandomUtils.nextFloat((float) 4.4316092, (float) 44.4330008),
-                        RandomUtils.nextFloat((float) 26.0977631, (float) 26.10281537),
+                        RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
+                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
                         RandomUtils.nextFloat(60, 100));
             }
             else
@@ -68,8 +72,8 @@ public class SensorDataProducer implements Runnable {
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
-                        RandomUtils.nextFloat((float) 44.3332918, (float) 44.543616),
-                        RandomUtils.nextFloat((float) 25.9563351, (float) 26.2386826),
+                        RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
+                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
                         RandomUtils.nextFloat(0, 100));
             }
 

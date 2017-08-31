@@ -473,7 +473,7 @@
 
         var drawTaxiActionClusters = function(action) {
             var request = $.ajax({
-                url: config.uri + "/traffic/" + action + "clusters?numberOfClusters=3",
+                url: config.uri + "/traffic/taxiactionclusters?taxiaction" + action + "numberOfClusters=3",
                 type: "GET",
                 connection: "keep-alive",
                 headers: {"Authorization": config.accessToken},

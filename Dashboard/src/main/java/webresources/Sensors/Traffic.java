@@ -128,7 +128,7 @@ public class Traffic {
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/pickupsclusters", method = RequestMethod.GET)
+    @RequestMapping(value = "/taxiactionclusters", method = RequestMethod.GET)
     public ResponseEntity<?> pickupClusters(@RequestParam Map<String, String> queryParams) {
 
         MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );

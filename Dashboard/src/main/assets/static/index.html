@@ -49,6 +49,54 @@
         .right-panel {
             height: 500px;
         }
+
+
+        .gradientButton {
+            height: 150px;
+            width: 250px;
+            color: #fff;
+            text-shadow: -2px 2px #346392;
+            font-size: 1.2em;
+            background-color: #ff9664;
+            background-image: -webkit-linear-gradient(top, #6496c8, #346392);
+            -webkit-box-shadow: inset 0 0 0 1px #27496d;
+            border: none;
+            border-radius: 15px;
+        }
+
+        .gradientButton .pressedButton {
+            -webkit-box-shadow: inset 0 0 0 1px #27496d,inset 0 5px 30px #193047;
+        }
+
+        #temperatureButton {
+            background-color: #ff9664;
+            background-image: -webkit-linear-gradient(top, #c8b811, #926004);
+        }
+
+        #noiseButton {
+            background-color: #b7faff;
+            background-image: -webkit-linear-gradient(top, #0ebac8, #186a92);
+        }
+
+        #co2Button {
+            background-color: #a5ffb7;
+            background-image: -webkit-linear-gradient(top, #23c888, #119214);
+        }
+
+        #trafficButton {
+            background-color: #fff19f;
+            background-image: -webkit-linear-gradient(top, #c3c872, #919207);
+        }
+
+        .gradientButton img {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            width: 40px !important;
+            height: 40px !important;
+        }
+
+
     </style>
 
     <script type="text/javascript">
@@ -473,7 +521,7 @@
 
         var drawTaxiActionClusters = function(action) {
             var request = $.ajax({
-                url: config.uri + "/traffic/taxiactionclusters?taxiaction" + action + "numberOfClusters=3",
+                url: config.uri + "/traffic/taxiactionclusters?taxiaction=" + action + "&numberOfClusters=3",
                 type: "GET",
                 connection: "keep-alive",
                 headers: {"Authorization": config.accessToken},
@@ -484,12 +532,12 @@
 
             request.done(function (clusters) {
 
-                for (var i = 0; i < old_pickup_markers.length; i++) {
+                for (var i = 0; i < old_taxi_action_clusters[action].length; i++) {
                     old_taxi_action_clusters[action][i].setMap(null);
                 }
 
                 var image = {
-                    url: "/images/taxid" + action + ".png",
+                    url: "/images/taxi" + action + ".png",
                     scaledSize: new google.maps.Size(50, 50), // scaled size
                     origin: new google.maps.Point(0, 0), // origin
                     anchor: new google.maps.Point(0, 0) // anchor
@@ -510,12 +558,14 @@
             });
         };
 
+        drawTaxiActionClusters("pickups");
         window.timerId4 = setInterval(function() {
-            drawTaxiActionClusters("pickups")
+            drawTaxiActionClusters("pickups");
         }, 10000);
 
+        drawTaxiActionClusters("dropoffs");
         window.timerId4 = setInterval(function() {
-            drawTaxiActionClusters("dropoffs")
+            drawTaxiActionClusters("dropoffs");
         }, 10000);
 
         function init_jquery() {
@@ -566,6 +616,16 @@
                     }
                 },
                 debug: true
+            });
+
+            $('.gradientButton').on('click', function(){
+                if($(this).hasClass("pressedButton")) {
+                    $(this).css('-webkit-box-shadow', '');
+                    $(this).removeClass('pressedButton');
+                } else {
+                    $(this).addClass('pressedButton');
+                    $(this).css('-webkit-box-shadow', 'inset 0 0 0 1px #27496d,inset 0 5px 30px #193047');
+                }
             });
         }
 
@@ -708,51 +768,93 @@
 
 
 
-        <div class="row spacer">
-            <!-- Map -->
-            <div class="col-sm-9">
-                <!-- map-->
-                    <h4>
-                        <span class="glyphicon glyphicon-map-marker"></span> Your Location
-                        <div>Average noise: <span id="avgNoise"></span></div>
-                        <div>Minimum noise: <span id="minNoise"></span></div>
-                        <div>Maximum noise: <span id="maxNoise"></span></div>
-                        <div>Samples/s (noise): <span id="speedNoise"></span></div>
-                        <div>Total samples: <span id="totalSample"></span></div>
-                    </h4>
-                    <div class="google-map-canvas" id="map-canvas"> </div>
-                <!-- end map-->
-            </div>
-            <!--End Buttons and map-->
+        <div class="row" style="margin-top: 30px; margin-bottom: 30px">
 
-            <!-- Right Side Panels -->
-            <div class="col-sm-3 right-panel">
-
-                <!-- Buttons-->
-                <button type="button" class="btn btn-block btn-info btn-lg" data-toggle="modal" data-target="#locationModal">Create Location</button>
-
-
-                <!-- Top Locations panel -->
-                <div style="height: 100%; " class="panel panel-default">
-                    <div class="panel-heading ">
-                        <h3 class="panel-title"><b>Top Locations</b></h3>
-                    </div>
-                    <div ng-controller="topLocationsController" style=" height: 100%; overflow-y:auto;" class="panel-body">
-                        <p ng-repeat="x in top_locations">
-                            <a href="#" ng-click="$event.preventDefault();redirectToLocation(x.id, 'location.html')">
-                                {{ x.votes }}
-                                <span style="color:#F7BE81;" class="glyphicon glyphicon-star"> </span>
-                                {{ x.name }}
-                            </a>
-                        </p>
-
-                    </div>
+            <!-- Buttons -->
+            <div class="row col-sm-9">
+                <div  class="col-md-1">
                 </div>
-                <!-- End Top Locations panel -->
+
+                <button id="temperatureButton" class="col-md-2 gradientButton" style="margin-right: 5px; margin-left: -30px;">
+                    <div><span style="font-weight: bold;">Temperature</span></div>
+                    <div>Average: <span id="avgTemperature"></span></div>
+                    <div>Minimum: <span id="minTemperature"></span></div>
+                    <div>Maximum: <span id="maxminTemperature"></span></div>
+                    <div>Samples/s ): <span id="speedSamplesTemperature"></span></div>
+                    <div>Total samples: <span id="totalSamplesTemperature"></span></div>
+                    <img src="/images/temperature.png"/>
+                </button >
+
+                <button id="noiseButton" class="col-md-2 gradientButton" style="margin-right: 5px;">
+                    <div><span style="font-weight: bold;">Noise</span></div>
+                    <div>Average: <span id="avgNoise"></span></div>
+                    <div>Minimum: <span id="minNoise"></span></div>
+                    <div>Maximum: <span id="maxNoise"></span></div>
+                    <div>Samples/s ): <span id="speedSamplesNoise"></span></div>
+                    <div>Total samples: <span id="totalSamplesNoise"></span></div>
+                    <img src="/images/noise.png"/>
+                </button >
+
+                <button id="co2Button" class="col-md-2 gradientButton" style="margin-right: 5px;">
+                    <div><span style="font-weight: bold;">Co2</span></div>
+                    <div>Average: <span id="avgCo2"></span></div>
+                    <div>Minimum: <span id="minCo2"></span></div>
+                    <div>Maximum: <span id="maxCo2"></span></div>
+                    <div>Samples/s ): <span id="speedSamplesCo2"></span></div>
+                    <div>Total samples: <span id="totalSamplesCo2"></span></div>
+                    <img src="/images/co2.png"/>
+                </button >
+
+                <button id="trafficButton" class="col-md-2 gradientButton" style="margin-right: 5px;">
+                    <div><span style="font-weight: bold;">Traffic</span></div>
+                    <div>Average: <span id="avgSpeed"></span></div>
+                    <div>Samples/s ): <span id="speedSamplesTraffic"></span></div>
+                    <div>Total samples: <span id="totalSamplesTraffic"></span></div>
+                    <img src="/images/traffic.png"/>
+                </button >
 
             </div>
-            <!-- End right  side panels -->
         </div>
+            <!-- end Buttons -->
+
+            <div class="row">
+                <!-- Map -->
+                <div class="col-sm-9">
+                    <!-- map-->
+                        <div class="google-map-canvas" id="map-canvas"> </div>
+                    <!-- end map-->
+                </div>
+                <!--End Buttons and map-->
+
+                <!-- Right Side Panels -->
+                <div class="col-sm-3 right-panel" style = " margin-top: -50px;">
+
+                    <!-- Buttons-->
+                    <button type="button" class="btn btn-block btn-info btn-lg" data-toggle="modal" data-target="#locationModal">Create Location</button>
+
+
+                    <!-- Top Locations panel -->
+                    <div style="height: 100%;" class="panel panel-default">
+                        <div class="panel-heading ">
+                            <h3 class="panel-title"><b>Top Locations</b></h3>
+                        </div>
+                        <div ng-controller="topLocationsController" style=" height: 100%; overflow-y:auto;" class="panel-body">
+                            <p ng-repeat="x in top_locations">
+                                <a href="#" ng-click="$event.preventDefault();redirectToLocation(x.id, 'location.html')">
+                                    {{ x.votes }}
+                                    <span style="color:#F7BE81;" class="glyphicon glyphicon-star"> </span>
+                                    {{ x.name }}
+                                </a>
+                            </p>
+
+                        </div>
+                    </div>
+                    <!-- End Top Locations panel -->
+
+                </div>
+                <!-- End right  side panels -->
+            </div>
+
 
         <!--  near you -->
         <div class="row">

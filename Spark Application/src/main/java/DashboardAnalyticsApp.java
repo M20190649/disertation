@@ -101,9 +101,9 @@ public class DashboardAnalyticsApp {
 
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
 
-    // TrafficProcessing();
+     TrafficProcessing();
 
-    SensorDataProcessing(conf, "Temperature");
+    //SensorDataProcessing(conf, "Temperature");
   }
 
   static void SensorDataProcessing(SparkConf conf, String sensorType) {

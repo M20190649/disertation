@@ -103,3 +103,10 @@ bash /mnt/map/osm/import.sh /mnt/map/osm/SanFrancisco.osm.pbf Disertation ubuntu
 
 http://benrobb.com/2007/01/15/howto-remote-root-access-to-mysql/
 
+
+
+Kill hanging mongo ports:
+sudo fuser -k Port 27017/tcp
+sudo iptables -t filter -A INPUT -p tcp -i eth0 -m tcp --sport 27017 -j DROP
+
+

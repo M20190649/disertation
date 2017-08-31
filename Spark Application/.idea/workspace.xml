@@ -25,8 +25,8 @@
       <file leaf-file-name="DashboardAnalyticsApp.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/DashboardAnalyticsApp.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="445" column="0" lean-forward="true" selection-start-line="445" selection-start-column="0" selection-end-line="445" selection-end-column="0" />
+            <state relative-caret-position="246">
+              <caret line="503" column="51" lean-forward="true" selection-start-line="503" selection-start-column="51" selection-end-line="503" selection-end-column="51" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#4800#4987#0" expanded="true" />
@@ -658,12 +658,12 @@
       <workItem from="1490768138819" duration="2287000" />
       <workItem from="1491759547329" duration="1996000" />
       <workItem from="1503668034267" duration="3791000" />
-      <workItem from="1503832966087" duration="52430000" />
+      <workItem from="1503832966087" duration="53012000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="90692000" />
+    <option name="totallyTimeSpent" value="91274000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1048" extended-state="6" />
@@ -1197,8 +1197,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/DashboardAnalyticsApp.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="445" column="0" lean-forward="true" selection-start-line="445" selection-start-column="0" selection-end-line="445" selection-end-column="0" />
+        <state relative-caret-position="246">
+          <caret line="503" column="51" lean-forward="true" selection-start-line="503" selection-start-column="51" selection-end-line="503" selection-end-column="51" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#4800#4987#0" expanded="true" />

@@ -42,14 +42,14 @@ public class SensorDataProducer implements Runnable {
         System.out.println("Staring producer with: " + events);
 
         for (long nEvents = 0; nEvents < events; nEvents++) {
-            long runtime = new Date().getTime();
+            Calendar cal = Calendar.getInstance();
 
             String msg;
             if(nEvents % 100 == 0) {
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
+                        "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 44.5005622, (float) 44.5028918),
                         RandomUtils.nextFloat((float) 26.095008, (float) 26.1294057),
                         RandomUtils.nextFloat(120, 150));
@@ -57,7 +57,7 @@ public class SensorDataProducer implements Runnable {
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
+                        "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 4.4316092, (float) 44.4330008),
                         RandomUtils.nextFloat((float) 26.0977631, (float) 26.10281537),
                         RandomUtils.nextFloat(60, 100));
@@ -67,7 +67,7 @@ public class SensorDataProducer implements Runnable {
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
-                        (new Date()).toString(),
+                        "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 44.3332918, (float) 44.543616),
                         RandomUtils.nextFloat((float) 25.9563351, (float) 26.2386826),
                         RandomUtils.nextFloat(0, 100));

@@ -499,7 +499,7 @@ public class DashboardAnalyticsApp {
     JavaPairDStream<String, Double> pairs = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Double>() {
       @Override
       public Tuple2<String, Double> call(Tuple2<String, String> tuple2) {
-        String[] parts = tuple2._2().split(";");
+        String[] parts = tuple2._2().split(" ");
 
         double latitude = Double.parseDouble(parts[3]);
         double longitude = Double.parseDouble(parts[4]);

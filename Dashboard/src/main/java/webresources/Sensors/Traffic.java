@@ -23,6 +23,32 @@ public class Traffic {
     private static final double refLat = 37.704009;
     private static final double refLong = -122.509851;
     private static final double tileSize = 500; // meters
+    private static final int resoucesLimit = 500;
+
+    enum TaxiAction {
+        Other(0),
+        Pickup(1),
+        Dropoff(2);
+
+        private int value;
+
+        private TaxiAction(int value) {
+            this.value = value;
+        }
+
+        public static TaxiAction fromValue(int value) {
+            for (TaxiAction type : TaxiAction.values()) {
+                if (type.getValue() == value) {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
 
 
     @RequestMapping(value = "/aggregates", method = RequestMethod.GET)
@@ -32,9 +58,19 @@ public class Traffic {
         DB db = mongo.getDB("DashboardAnalyticsDatabase");
         DBCollection collection = db.getCollection("Traffic_Aggregates");
 
-           List<DBObject> results = new ArrayList<DBObject>();
+        List<DBObject> results = new ArrayList<DBObject>();
 
-        DBCursor cursor = collection.find();
+        int limit = resoucesLimit;
+        if(queryParams.get("limit") != null) {
+            limit = Integer.parseInt(queryParams.get("limit"));
+        }
+
+        BasicDBObject order = new BasicDBObject();
+        order.append("_id", -1);
+
+        DBCursor cursor = collection.find().sort(order).limit(limit);
+
+
         try {
             while(cursor.hasNext()) {
                 BasicDBObject obj = (BasicDBObject) cursor.next();
@@ -69,13 +105,15 @@ public class Traffic {
 
                 GeodeticCalculator calc = new GeodeticCalculator();
 
-                calc.setStartingGeographicPoint(center);
+                calc.setStartingGeographicPoint(center.getY(), center.getX());
                 calc.setDirection(90, (obj.getDouble("avgVelocityX") / 100 ) * (tileSize / 2)); // some hack to get the arrow size
                 Point2D velocityArrowHead = calc.getDestinationGeographicPoint();
 
-                calc.setStartingGeographicPoint(velocityArrowHead);
+                calc.setStartingGeographicPoint(velocityArrowHead.getX(), velocityArrowHead.getY());
                 calc.setDirection(0, (obj.getDouble("avgVelocityY") / 100 ) * (tileSize / 2));
                 velocityArrowHead = calc.getDestinationGeographicPoint();
+                velocityArrowHead = new Point2D.Double(velocityArrowHead.getY(), velocityArrowHead.getX()); // The GeodeticCalculator works with longitude, latitude pairs
+
 
                 obj.put("arrowHeadX", velocityArrowHead.getX());
                 obj.put("arrowHeadY", velocityArrowHead.getY());
@@ -90,12 +128,24 @@ public class Traffic {
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/pickupclusters", method = RequestMethod.GET)
+    @RequestMapping(value = "/pickupsclusters", method = RequestMethod.GET)
     public ResponseEntity<?> pickupClusters(@RequestParam Map<String, String> queryParams) {
 
         MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );
         DB db = mongo.getDB("DashboardAnalyticsDatabase");
         DBCollection collection = db.getCollection("Traffic_Clusters_KMeans");
+
+        TaxiAction taxiAction = TaxiAction.Other;
+        if(queryParams.get("taxiaction") != null) {
+            if(queryParams.get("taxiaction").equals("pickups")) {
+                taxiAction = TaxiAction.Pickup;
+            } else if(queryParams.get("taxiaction").equals("dropoffs")) {
+                taxiAction = TaxiAction.Dropoff;
+            }
+        }
+
+        BasicDBObject query = new BasicDBObject();
+        query.put("taxiActionType", taxiAction.getValue());
 
         List<DBObject> results = new ArrayList<DBObject>();
 
@@ -104,7 +154,7 @@ public class Traffic {
         BasicDBObject order = new BasicDBObject();
         order.append("_id", -1);
 
-        DBCursor cursor  = collection.find().sort(order).limit(numberOfCluster);
+        DBCursor cursor  = collection.find(query).sort(order).limit(numberOfCluster);
 
         try {
             while(cursor.hasNext()) {

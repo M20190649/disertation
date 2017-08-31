@@ -107,8 +107,8 @@
 		}
 
 		function setCurrentPositionFailure() {
-			currentLatitude =  44.438606;
-		    currentLongitude = 26.049492;
+			currentLatitude =  37.704009;
+		    currentLongitude = -122.509851;
 		    dfd.resolve();
             nearbyLocationsController.deffered.resolve();
 		}
@@ -116,18 +116,6 @@
 
         // Populate map locations.
         function initialize() {
-
-            script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'js/external/heatmap.min.js';
-            document.body.appendChild(script);
-
-            script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'js/external/gmaps-heatmap.js';
-            document.body.appendChild(script);
-
-
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(setCurrentPositionSuccess, setCurrentPositionFailure);
             } else {
@@ -262,7 +250,7 @@
         }
 
         function whenAvailable(name, callback) {
-            var interval = 10; // ms
+            var interval = 1; // ms
             window.setTimeout(function() {
                 if (window[name]) {
                     callback(window[name]);
@@ -286,7 +274,7 @@
 
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&' +
+            script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=visualization&' +
                 'callback=initialize';
             document.body.appendChild(script);
 
@@ -388,7 +376,9 @@
 */
 
             var old_arrows = [];
-            window.timerId4 = setInterval(function() {
+            var oldHeatmap = null;
+            var allTrafficAggregates = [];
+            var drawTrafficAggregates = function() {
                 var request = $.ajax({
                     url: config.uri + "/traffic/aggregates",
                     type: "GET",
@@ -401,13 +391,15 @@
 
                 request.done(function(trafficAggregates) {
 
-                    for (var i = 0; i < old_arrows.length; i++)
-                    {
-                        old_arrows[i].setMap(null);
-                    }
-
-
                     for(var i = 0; i < trafficAggregates.length; i++) {
+
+                        allTrafficAggregates[trafficAggregates[i]["key"]] = trafficAggregates[i];
+
+                        // erase old arrow
+                        if(old_arrows.hasOwnProperty(trafficAggregates[i]["key"])) {
+                            old_arrows[trafficAggregates[i]["key"]].setMap(null);
+                        }
+
                         // Define a symbol using a predefined path (an arrow)
                         // supplied by the Google Maps JavaScript API.
                         var lineSymbol = {
@@ -417,29 +409,71 @@
                         // Create the polyline and add the symbol via the 'icons' property.
                         var line = new google.maps.Polyline({
                             path: [
-                                {lat: parseFloat(trafficAggregates[i].centerArrowY), lng: parseFloat(trafficAggregates[i].centerArrowX)},
-                                {lat: parseFloat(trafficAggregates[i].arrowHeadY), lng: parseFloat(trafficAggregates[i].arrowHeadX)}
-                                ],
+                                {lat: parseFloat(trafficAggregates[i].centerArrowX), lng: parseFloat(trafficAggregates[i].centerArrowY)},
+                                {lat: parseFloat(trafficAggregates[i].arrowHeadX), lng: parseFloat(trafficAggregates[i].arrowHeadY)}
+                            ],
                             icons: [{
                                 icon: lineSymbol,
-                                offset: '100%'
+                                offset: '100%',
                             }],
+                            title: Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h",
                             map: map
                         });
 
-                        old_arrows.push(line);
-                    }
-                });
-            }, 10000);
+                        (function(title) {
+                            var infoWindow = new google.maps.InfoWindow();
 
-            whenAvailable("HeatmapOverlay",init_heatmap);
+                            // Open the InfoWindow on mouseover:
+                            google.maps.event.addListener(line, 'mouseover', function(e) {
+                                infoWindow.setPosition(e.latLng);
+                                infoWindow.setContent(title);
+                                infoWindow.open(map);
+                            });
+
+                            // Close the InfoWindow on mouseout:
+                            google.maps.event.addListener(line, 'mouseout', function() {
+                                infoWindow.close();
+                            });
+                        })(Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h");
+
+                        // update arrow
+                        old_arrows[trafficAggregates[i]["key"]] = line;
+                    }
+
+                    var heatMapData = [];
+
+                    for(var key in allTrafficAggregates) {
+                        heatMapData.push({location: new google.maps.LatLng(allTrafficAggregates[key].averagePositionX, allTrafficAggregates[key].averagePositionY), weight: allTrafficAggregates[key].CountCarsForAverageVelocity * 10});
+                    }
+
+                    var heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatMapData,
+                        radius: 25
+                    });
+
+                    if(oldHeatmap != null) {
+                        oldHeatmap.setMap(null);
+                    }
+
+                    heatmap.setMap(map);
+
+                    oldHeatmap = heatmap;
+
+                });
+            };
+
+            drawTrafficAggregates();
+            window.timerId4 = setInterval(drawTrafficAggregates, 10000);
+
         }
 
+        var old_taxi_action_clusters = [];
+        old_taxi_action_clusters["pickups"] = [];
+        old_taxi_action_clusters["dropoffs"] = [];
 
-        var old_pickup_markers = [];
-        window.timerId4 = setInterval(function() {
+        var drawTaxiActionClusters = function(action) {
             var request = $.ajax({
-                url: config.uri + "/traffic/pickupclusters?numberOfClusters=3",
+                url: config.uri + "/traffic/" + action + "clusters?numberOfClusters=3",
                 type: "GET",
                 connection: "keep-alive",
                 headers: {"Authorization": config.accessToken},
@@ -448,66 +482,41 @@
                 cache: false
             });
 
-            request.done(function(pickupClusters) {
+            request.done(function (clusters) {
 
-                for (var i = 0; i < old_pickup_markers.length; i++)
-                {
-                    old_pickup_markers[i].setMap(null);
+                for (var i = 0; i < old_pickup_markers.length; i++) {
+                    old_taxi_action_clusters[action][i].setMap(null);
                 }
 
+                var image = {
+                    url: "/images/taxid" + action + ".png",
+                    scaledSize: new google.maps.Size(50, 50), // scaled size
+                    origin: new google.maps.Point(0, 0), // origin
+                    anchor: new google.maps.Point(0, 0) // anchor
+                };
 
-                for(var i = 0; i < pickupClusters.length; i++) {
-                    var myLatLng = {lat: pickupClusters[i].latitude, lng: pickupClusters[i].longitude};
+                for (var i = 0; i < clusters.length; i++) {
+                    var myLatLng = {lat: clusters[i].latitude, lng: clusters[i].longitude};
 
                     var marker = new google.maps.Marker({
                         position: myLatLng,
                         map: map,
+                        icon: image,
                         title: 'Taxi cluster'
                     });
 
-                    old_pickup_markers.push(marker);
+                    old_taxi_action_clusters[action].push(marker);
                 }
             });
+        };
+
+        window.timerId4 = setInterval(function() {
+            drawTaxiActionClusters("pickups")
         }, 10000);
 
-
-        function init_heatmap() {
-
-            google.maps.event.addListener(map, 'zoom_changed', function() {
-                var zoomLevel = map.getZoom();
-                heatmap.setOptions({radius:zoomLevel*5.5});
-                heatmap.repaint();
-            });
-
-            // heatmap layer
-            heatmap = new HeatmapOverlay(map,
-                {
-                    // radius should be small ONLY if scaleRadius is true (or small radius is intended)
-                    "radius": 20,
-                    "maxOpacity": 1,
-                    // scales the radius based on map zoom
-                    "scaleRadius": false,
-                    // if set to false the heatmap uses the global maximum for colorization
-                    // if activated: uses the data maximum within the current map boundaries
-                    //   (there will always be a red spot with useLocalExtremas true)
-                    "useLocalExtrema": true,
-                    // which field name in your data represents the latitude - default "lat"
-                    latField: 'lat',
-                    // which field name in your data represents the longitude - default "lng"
-                    lngField: 'lng',
-                    // which field name in your data represents the data value - default "value"
-                    valueField: 'count'
-                }
-            );
-
-            var testData = {
-                max: 130,
-                min: 0,
-                data: [{lat:  44.4376, lng:26.03682, count: 30},{lat: 44.4364, lng:26.05484, count: 5}, {lat: 44.42157, lng:26.03433, count: 50},
-                    {lat:  44.4368212, lng:26.0350494, count: 30},{lat: 44.4382593, lng:26.0351593, count: 35}, {lat: 44.4343353, lng:26.0346486, count: 130}]
-            };
-            heatmap.setData(testData);
-        }
+        window.timerId4 = setInterval(function() {
+            drawTaxiActionClusters("dropoffs")
+        }, 10000);
 
         function init_jquery() {
             $('#location-query').typeahead({

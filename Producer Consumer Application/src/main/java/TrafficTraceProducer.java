@@ -107,13 +107,23 @@ public class TrafficTraceProducer implements Runnable {
                     calc.setStartingGeographicPoint(previousLong, previousLat);
                     calc.setDestinationGeographicPoint(previousLong, latitude);
 
-                    velocityX = (calc.getOrthodromicDistance() / 1000) / ((double)(translatedTimestamp - previousTimeStamp) / (1000 * 3600));
+                    int velocitySign = 1;
+                    if(previousLat > latitude) {
+                        velocitySign = -1;
+                    }
+
+                    velocityX = velocitySign * (calc.getOrthodromicDistance() / 1000) / ((double)(translatedTimestamp - previousTimeStamp) / (1000 * 3600));
 
                     calc = new GeodeticCalculator();
                     calc.setStartingGeographicPoint(previousLong, previousLat);
                     calc.setDestinationGeographicPoint(longitude, previousLat);
 
-                    velocityY = (calc.getOrthodromicDistance() / 1000) / (((double)translatedTimestamp - previousTimeStamp) / (1000 * 3600));
+                    velocitySign = 1;
+                    if(previousLong > longitude) {
+                        velocitySign = -1;
+                    }
+
+                    velocityY = velocitySign * (calc.getOrthodromicDistance() / 1000) / (((double)translatedTimestamp - previousTimeStamp) / (1000 * 3600));
 
                     previousLat = latitude;
                     previousLong = longitude;

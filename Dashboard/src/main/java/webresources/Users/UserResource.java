@@ -25,6 +25,8 @@ public class UserResource {
     @JsonProperty("lastName")
     public String lastName;
 
+    @JsonProperty("isAdmin")
+    public boolean isAdmin;
 
     @NotNull
     @JsonProperty("password")

@@ -99,13 +99,15 @@ public class DashboardAnalyticsApp {
 
   public static void main(String[] args) {
 
-    TrafficProcessing();
-    /*
-
-
-    Config config = new Config();
-
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
+
+    // TrafficProcessing();
+
+    SensorDataProcessing(conf, "Temperature");
+  }
+
+  static void SensorDataProcessing(SparkConf conf, String sensorType) {
+
     JavaSparkContext sc = new JavaSparkContext(conf);
 
     JavaStreamingContext jssc = new JavaStreamingContext(sc, new Duration(10000));
@@ -114,18 +116,18 @@ public class DashboardAnalyticsApp {
     final Map AggregatesMongoConfig = new HashMap();
     AggregatesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
     AggregatesMongoConfig.put("database", "DashboardAnalyticsDatabase");
-    AggregatesMongoConfig.put("collection", config.application + "_Aggregates");
+    AggregatesMongoConfig.put("collection", sensorType + "_Aggregates");
 
     final Map TilesMongoConfig = new HashMap();
     TilesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
     TilesMongoConfig.put("database", "DashboardAnalyticsDatabase");
-    TilesMongoConfig.put("collection", config.application + "_Tiles");
+    TilesMongoConfig.put("collection", sensorType + "_Tiles");
     TilesMongoConfig.put("splitKey", "tileKey");
     TilesMongoConfig.put("splitKeyType", "string");
 
 
     Map<String, Integer> topicMap = new HashMap<String, Integer>();
-    topicMap.put("noise", 2); // number of kafka partitions to consume
+    topicMap.put(sensorType, 2); // number of kafka partitions to consume
 
     // <K, V> - K = kafka message id, V = message itself
     JavaPairReceiverInputDStream<String, String> messages =
@@ -161,7 +163,7 @@ public class DashboardAnalyticsApp {
     // Wait for 10 seconds then exit. To run forever call without a timeout
     jssc.awaitTermination();
     // Stop the streaming context
-    jssc.stop();*/
+    jssc.stop();
   }
 
   static void TrafficProcessing() {
@@ -582,9 +584,9 @@ public class DashboardAnalyticsApp {
             JavaSparkContext sc = new JavaSparkContext(rdd.context());
             JavaRDD<Row> rowRDD = sc.parallelize(Arrays.asList(row));
 
-            DataFrame temperatureDataFrame = sqlContext.createDataFrame(rowRDD, schema2);
+            DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema2);
 
-            temperatureDataFrame.write().format("com.stratio.datasource.mongodb").mode("append").options(options).save();
+            dataFrame.write().format("com.stratio.datasource.mongodb").mode("append").options(options).save();
           }
         }
         return null;
@@ -596,9 +598,5 @@ public class DashboardAnalyticsApp {
   static double angleVectors(Vector2d vec1, Vector2d vec2) {
     return Math.toDegrees(vec1.angle(vec2));
   }
-
-
-
-
 
 }

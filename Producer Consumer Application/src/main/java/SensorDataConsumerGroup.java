@@ -11,12 +11,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class ConsumerGroup {
+public class SensorDataConsumerGroup {
     private final ConsumerConnector consumer;
     private final String topic;
     private  ExecutorService executor;
 
-    public ConsumerGroup(String a_zookeeper, String a_groupId, String a_topic) {
+    public SensorDataConsumerGroup(String a_zookeeper, String a_groupId, String a_topic) {
         consumer = kafka.consumer.Consumer.createJavaConsumerConnector(
                 createConsumerConfig(a_zookeeper, a_groupId));
         this.topic = a_topic;
@@ -48,7 +48,7 @@ public class ConsumerGroup {
         //
         int threadNumber = 0;
         for (final KafkaStream stream : streams) {
-            executor.submit(new Consumer(stream, threadNumber));
+            executor.submit(new SensorDataConsumer(stream, threadNumber, topic));
             threadNumber++;
         }
     }

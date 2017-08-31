@@ -35,6 +35,8 @@ public class TrafficTraceProducer implements Runnable {
         props.put("partitioner.class", "SimplePartitioner");
         props.put("request.required.acks", "1");
 
+        Random rnd = new Random();
+
         ProducerConfig config = new ProducerConfig(props);
 
         Producer<String, String> producer = new Producer<String, String>(config);
@@ -100,8 +102,6 @@ public class TrafficTraceProducer implements Runnable {
                     System.out.println(e.getStackTrace());
                 }
 
-
-
                 if(previousLat != 0 && previousLong != 0) {
                     GeodeticCalculator calc = new GeodeticCalculator();
                     calc.setStartingGeographicPoint(previousLong, previousLat);
@@ -156,7 +156,9 @@ public class TrafficTraceProducer implements Runnable {
                         taxiAction);
 
                 String message = eventType + " " + eventSource + " " + trafficObject;
-                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, "keyForPartitioning", message);
+
+                String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
+                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
                 producer.send(data);
 
             }

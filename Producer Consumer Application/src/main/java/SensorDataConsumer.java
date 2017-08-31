@@ -5,20 +5,22 @@ import com.mongodb.MongoClient;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 
-public class Consumer implements Runnable {
+public class SensorDataConsumer implements Runnable {
     private KafkaStream m_stream;
     private int m_threadNumber;
+    private String m_sensorType;
 
-    public Consumer(KafkaStream a_stream, int a_threadNumber) {
+    public SensorDataConsumer(KafkaStream a_stream, int a_threadNumber, String a_sensorType) {
         m_threadNumber = a_threadNumber;
         m_stream = a_stream;
+        m_sensorType = a_sensorType;
     }
 
     public void run() {
 
-        MongoClient mongo = new MongoClient( "192.168.1.131" , 27017 );
-        DB db = mongo.getDB("Noise");
-        DBCollection collection = db.getCollection("Samples");
+        MongoClient mongo = new MongoClient( Config.mongoIp , 27017 );
+        DB db = mongo.getDB("DashboardAnalyticsDatabase");
+        DBCollection collection = db.getCollection(m_sensorType + "_Samples");
 
         ConsumerIterator<byte[], byte[]> it = m_stream.iterator();
         while (it.hasNext()) {

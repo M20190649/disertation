@@ -867,9 +867,9 @@ instanceKlass java/util/concurrent/BlockingQueue
 instanceKlass kafka/consumer/ConsumerConnector
 instanceKlass kafka/producer/Producer
 instanceKlass kafka/javaapi/consumer/ConsumerConnector
-instanceKlass kafka/consumer/Consumer$
+instanceKlass kafka/consumer/SensorDataConsumer$
 instanceKlass kafka/javaapi/producer/Producer
-instanceKlass kafka/consumer/Consumer
+instanceKlass kafka/consumer/SensorDataConsumer
 instanceKlass java/util/Formattable
 instanceKlass java/util/Formatter$Conversion
 instanceKlass java/util/Formatter$Flags

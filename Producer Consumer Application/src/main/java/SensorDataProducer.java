@@ -12,11 +12,13 @@ import kafka.producer.ProducerConfig;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
-public class TestProducer implements Runnable {
+public class SensorDataProducer implements Runnable {
     private int m_nEvents;
+    private String m_nSensorType;
 
-    public TestProducer(int a_nEvents) {
+    public SensorDataProducer(int a_nEvents, String a_nSensorType) {
         m_nEvents = a_nEvents;
+        m_nSensorType = a_nSensorType;
     }
 
     public void run() {
@@ -26,7 +28,7 @@ public class TestProducer implements Runnable {
         System.out.println("Staring producer with: " + events);
 
         Properties props = new Properties();
-        props.put("metadata.broker.list", "192.168.1.131:9092");
+        props.put("metadata.broker.list", Config.brokerList);
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "SimplePartitioner");
         props.put("request.required.acks", "1");
@@ -41,12 +43,11 @@ public class TestProducer implements Runnable {
 
         for (long nEvents = 0; nEvents < events; nEvents++) {
             long runtime = new Date().getTime();
-            String ip = "192.168.1.131";
 
             String msg;
             if(nEvents % 100 == 0) {
                 msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
+                        m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),
                         RandomUtils.nextFloat((float) 44.5005622, (float) 44.5028918),
@@ -54,7 +55,7 @@ public class TestProducer implements Runnable {
                         RandomUtils.nextFloat(120, 150));
             } else if(nEvents % 200 == 0) {
                 msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
+                        m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),
                         RandomUtils.nextFloat((float) 4.4316092, (float) 44.4330008),
@@ -64,7 +65,7 @@ public class TestProducer implements Runnable {
             else
             {
                 msg = String.format("%s; %s; %s; %f; %f; %f",
-                        "noise",
+                        m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),
                         RandomUtils.nextFloat((float) 44.3332918, (float) 44.543616),
@@ -72,7 +73,8 @@ public class TestProducer implements Runnable {
                         RandomUtils.nextFloat(0, 100));
             }
 
-            KeyedMessage<String, String> data = new KeyedMessage<String, String>("noise", ip, msg);
+            String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
+            KeyedMessage<String, String> data = new KeyedMessage<String, String>(m_nSensorType, partitioningKey, msg);
             producer.send(data);
 
             System.out.println("Sent: " + msg);

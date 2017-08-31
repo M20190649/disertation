@@ -442,7 +442,7 @@ public class DashboardAnalyticsApp {
     return inputDStream.map(new Function<Tuple2<String, String>, Double>() {
       @Override
       public Double call(Tuple2<String, String> tuple2) {
-        String[] parts = tuple2._2().split(";");
+        String[] parts = tuple2._2().split(" ");
 
         return Double.parseDouble(parts[5]);
       }

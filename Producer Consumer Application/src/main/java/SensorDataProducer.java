@@ -46,7 +46,7 @@ public class SensorDataProducer implements Runnable {
 
             String msg;
             if(nEvents % 100 == 0) {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
+                msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),
@@ -54,7 +54,7 @@ public class SensorDataProducer implements Runnable {
                         RandomUtils.nextFloat((float) 26.095008, (float) 26.1294057),
                         RandomUtils.nextFloat(120, 150));
             } else if(nEvents % 200 == 0) {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
+                msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),
@@ -64,7 +64,7 @@ public class SensorDataProducer implements Runnable {
             }
             else
             {
-                msg = String.format("%s; %s; %s; %f; %f; %f",
+                msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         (new Date()).toString(),

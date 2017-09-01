@@ -131,7 +131,6 @@ public class DashboardAnalyticsApp {
 
     JavaStreamingContext jssc = new JavaStreamingContext(sc, new Duration(10000));
 
-    SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
     final Map AggregatesMongoConfig = new HashMap();
     AggregatesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
     AggregatesMongoConfig.put("database", "DashboardAnalyticsDatabase");
@@ -200,6 +199,11 @@ public class DashboardAnalyticsApp {
     TilesMongoConfig.put("splitKey", "key");
     TilesMongoConfig.put("splitKeyType", "string");
 
+    final Map AggregatesMongoConfig = new HashMap();
+    AggregatesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    AggregatesMongoConfig.put("database", "DashboardAnalyticsDatabase");
+    AggregatesMongoConfig.put("collection", "Traffic_Aggregates");
+
 
     Map<String, Integer> topicMap = new HashMap<String, Integer>();
     topicMap.put("traffic", 2); // number of kafka partitions to consume
@@ -208,6 +212,11 @@ public class DashboardAnalyticsApp {
             KafkaUtils.createStream(jssc, config.kafkaHost + ":" + config.kafkaPort, config.kafkaGroup, topicMap);
 
     messages.cache(); // ? check if this stream is duplicated
+
+
+    JavaDStream<Double> samples = GetTrafficSampleValues(messages);
+
+    ComputeOveralTrafficStatisticsAndWriteToMongo(samples, AggregatesMongoConfig);
 
     // key = tileIdX + ":" + tileIdY;
     JavaPairDStream<String, Tuple3<Point2d, Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple3<Point2d, Vector2d, Integer>>() {
@@ -499,6 +508,62 @@ public class DashboardAnalyticsApp {
           double count = samples.count();
 
           Row row = RowFactory.create(avg, min, max, count);
+
+          JavaSparkContext sc = new JavaSparkContext(rdd.context());
+          JavaRDD<Row> rowRDD = sc.parallelize(Arrays.asList(row));
+
+          DataFrame temperatureDataFrame = sqlContext.createDataFrame(rowRDD, schema);
+
+          temperatureDataFrame.write().format("com.stratio.datasource.mongodb").mode("append").options(options).save();
+        }
+
+        return null;
+      }
+    });
+  }
+
+
+  static JavaDStream<Double> GetTrafficSampleValues(JavaPairReceiverInputDStream<String, String> inputDStream) {
+    return inputDStream.map(new Function<Tuple2<String, String>, Double>() {
+      @Override
+      public Double call(Tuple2<String, String> tuple2) {
+        String[] parts = tuple2._2().split(" ");
+
+        Double velocity = Math.sqrt(Math.pow(Double.parseDouble(parts[6]), 2) + Math.pow(Double.parseDouble(parts[7]), 2));
+
+        return velocity;
+      }
+    });
+  }
+
+  static void ComputeOveralTrafficStatisticsAndWriteToMongo(JavaDStream<Double> samples, final Map options){
+
+    // The schema is encoded in a string
+    String schemaString = "average count";
+
+    // Generate the schema based on the string of schema
+    List<StructField> fields = new ArrayList<StructField>();
+    for (String fieldName: schemaString.split(" ")) {
+      fields.add(DataTypes.createStructField(fieldName, DataTypes.DoubleType, true));
+    }
+    final StructType schema = DataTypes.createStructType(fields);
+
+    samples.foreachRDD(new Function<JavaRDD<Double>, Void>() {
+      public Void call(JavaRDD<Double> rdd) {
+
+        if(!rdd.partitions().isEmpty()) {
+          SQLContext sqlContext = SQLContext.getOrCreate(rdd.context());
+
+          JavaDoubleRDD samples = rdd.mapToDouble(new org.apache.spark.api.java.function.DoubleFunction<Double>() {
+            public double call(Double x) {
+              return x;
+            }
+          });
+
+          double avg = samples.mean();
+          double count = samples.count();
+
+          Row row = RowFactory.create(avg, count);
 
           JavaSparkContext sc = new JavaSparkContext(rdd.context());
           JavaRDD<Row> rowRDD = sc.parallelize(Arrays.asList(row));

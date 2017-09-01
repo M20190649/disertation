@@ -1,3 +1,8 @@
+import kafka.consumer.KafkaStream;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Created by unknown_user on 4/23/2016.
  */
@@ -14,9 +19,19 @@ public class Main {
 
         //TrafficLoadGenerator.generate(sourceFolder);
 
-        (new Thread(new SensorDataProducer(10000, "Temperature"))).start();
-        (new Thread(new SensorDataProducer(10000, "Noise"))).start();
-        (new Thread(new SensorDataProducer(10000, "Co2"))).start();
+        ExecutorService executor = Executors.newFixedThreadPool(1000);
+
+        // now create an object to consume the messages
+        //
+        int threadNumber = 1000;
+
+        for(int i = 0; i < threadNumber; i++) {
+            (new Thread(new SensorDataProducer(10000, "Temperature"))).start();
+        }
+
+
+        //(new Thread(new SensorDataProducer(10000, "Noise"))).start();
+        //(new Thread(new SensorDataProducer(10000, "Co2"))).start();
 
 
       /*  SensorDataConsumerGroup example = new SensorDataConsumerGroup(Config.zookeeper, "TemperatureGroup","Temperature");

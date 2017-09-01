@@ -113,6 +113,17 @@
 
         window.timerId = [];
         window.timerId["temperature"] = [];
+        window.timerId["noise"] = [];
+        window.timerId["co2"] = [];
+        window.timerId["traffic"] = [];
+
+        window.objectIds = [];
+        window.objectIds["temperature"] = [];
+        window.objectIds["noise"]= [];
+        window.objectIds["co2"] = [];
+        window.objectIds["traffic"] = [];
+
+        window.lastSampleCount = [];
 
         var user = $.parseJSON(storage['user']);
         var user_location;
@@ -353,23 +364,43 @@
                         unitOfMeasure = "ppm";
                     }
 
+                    function capitalizeFirstLetter(string) {
+                        return string.charAt(0).toUpperCase() + string.slice(1);
+                    }
+
                     request.done(function(aggregate) {
+
                         var average = aggregate.average;
                         var min = aggregate.min;
                         var max = aggregate.max;
+
                         var count = aggregate.count;
 
-                        $("#avg" + sensorType).text(average.toFixed(2) + "db");
-                        $("#min" + sensorType).text(min.toFixed(2) + "db");
-                        $("#max" + sensorType).text(max.toFixed(2) + "db");
-                        $("#speedSamples" + sensorType).text(count.toFixed(2));
+                        var sampleSpeed = 0;
+                        if(sensorType in lastSampleCount && "aggregate" in window.objectIds[sensorType]) {
+                            var lastTimestamp = window.objectIds[sensorType]["aggregate"]["timestamp"];
+                            var currentTimestamp = aggregate["_id"]["timestamp"];
+
+                            sampleSpeed = count / (currentTimestamp - lastTimestamp);
+                        }
+
+
+                        var sensor = capitalizeFirstLetter(sensorType);
+                        $("#avg" + sensor).text(average.toFixed(2) + "db");
+                        $("#min" + sensor).text(min.toFixed(2) + "db");
+                        $("#max" + sensor).text(max.toFixed(2) + "db");
+                        $("#speedSamples" + sensor).text(sampleSpeed.toFixed(2));
+
+                        window.objectIds[sensorType]["aggregate"] = aggregate["_id"];
+                        lastSampleCount[sensorType] = count;
+
                     });
                 };
 
                  getLatestSensorAggregate(sensorType);
                  window.timerId[sensorType][0] = setInterval(function() {
                     getLatestSensorAggregate(sensorType);
-                 }, 1000);
+                 }, 11000);
 
                 function getGreenToRed(percent){
                     r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
@@ -380,8 +411,11 @@
 
                 allTiles = [];
                 allTiles["temperature"] = [];
+                allTiles["noise"] = [];
+                allTiles["co2"] = [];
 
                 var drawSensorRectangles = function(sensorType) {
+
                     var request = $.ajax({
                         url: config.uri + "/sensordata/" + sensorType + "/tiles",
                         type: "GET",
@@ -648,7 +682,7 @@
                 }
             });
 
-            $("#temperatureButton").on('click', function(){
+            $("#noiseButton").on('click', function(){
                 if($(this).hasClass("pressedButton")) {
                     $(this).css('-webkit-box-shadow', '');
                     $(this).removeClass('pressedButton');
@@ -662,7 +696,7 @@
                 }
             });
 
-            $("#temperatureButton").on('click', function(){
+            $("#co2Button").on('click', function(){
                 if($(this).hasClass("pressedButton")) {
                     $(this).css('-webkit-box-shadow', '');
                     $(this).removeClass('pressedButton');
@@ -828,7 +862,7 @@
                     <div><span style="font-weight: bold;">Temperature</span></div>
                     <div>Average: <span id="avgTemperature"></span></div>
                     <div>Minimum: <span id="minTemperature"></span></div>
-                    <div>Maximum: <span id="maxminTemperature"></span></div>
+                    <div>Maximum: <span id="maxTemperature"></span></div>
                     <div>Samples/s : <span id="speedSamplesTemperature"></span></div>
                     <img src="/images/temperature.png"/>
                 </button >

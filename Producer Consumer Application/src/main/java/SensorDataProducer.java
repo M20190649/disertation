@@ -11,6 +11,8 @@ import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 public class SensorDataProducer implements Runnable {
     private int m_nEvents;
@@ -26,6 +28,8 @@ public class SensorDataProducer implements Runnable {
         Random rnd = new Random();
 
         System.out.println("Staring producer with: " + events);
+
+        Logger.getLogger("kafka").setLevel(Level.OFF);
 
         Properties props = new Properties();
         props.put("metadata.broker.list", Config.brokerList);
@@ -107,16 +111,16 @@ public class SensorDataProducer implements Runnable {
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(m_nSensorType, partitioningKey, msg);
             producer.send(data);
 
-            System.out.println("Sent: " + msg);
+            //System.out.println("Sent: " + msg);
 
 
-            try {
+/*            try {
 
                 Thread.sleep(1000);
 
             } catch (Exception e) {
                 System.out.println(e.getStackTrace());
-            }
+            }*/
         }
 
         producer.close();

@@ -4,7 +4,7 @@
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
-        int threads = 2;
+        int threads = 1;
 
         String sourceFolder = "C:/Users/unknown/Desktop/rawdata/traces/sanfranciscocabs";
 
@@ -15,9 +15,11 @@ public class Main {
         //TrafficLoadGenerator.generate(sourceFolder);
 
         (new Thread(new SensorDataProducer(10000, "Temperature"))).start();
+        (new Thread(new SensorDataProducer(10000, "Noise"))).start();
+        (new Thread(new SensorDataProducer(10000, "Co2"))).start();
 
 
-        SensorDataConsumerGroup example = new SensorDataConsumerGroup(Config.zookeeper, "TemperatureGroup","Temperature");
+      /*  SensorDataConsumerGroup example = new SensorDataConsumerGroup(Config.zookeeper, "TemperatureGroup","Temperature");
         example.run(threads);
 
 
@@ -27,6 +29,6 @@ public class Main {
 
         }
 
-        //example.shutdown();
+        example.shutdow*/n();
     }
 }

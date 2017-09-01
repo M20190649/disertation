@@ -44,37 +44,63 @@ public class SensorDataProducer implements Runnable {
         for (long nEvents = 0; nEvents < events; nEvents++) {
             Calendar cal = Calendar.getInstance();
 
-            private static final double refLat = 37.704009;
-            private static final double refLong = -122.509851;
-            37.8408570, -122.3386317
-
             String msg;
             if(nEvents % 100 == 0) {
+
+                float value = 0;
+
+                if(m_nSensorType == "Temperature") {
+                    value = RandomUtils.nextFloat(20, 22);
+                } else if (m_nSensorType == "Noise") {
+                    value = RandomUtils.nextFloat(100, 140);
+                } else if (m_nSensorType == "Co2") {
+                    value = RandomUtils.nextFloat(400, 410);
+                }
+
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
-                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
-                        RandomUtils.nextFloat(120, 150));
+                        -1 * RandomUtils.nextFloat((float) 122.3386317, (float) 122.509851),
+                        value);
             } else if(nEvents % 200 == 0) {
+
+                float value = 0;
+                if(m_nSensorType == "Temperature") {
+                    value = RandomUtils.nextFloat(8, 12);
+                } else if (m_nSensorType == "Noise") {
+                    value = RandomUtils.nextFloat(0, 40);
+                } else if (m_nSensorType == "Co2") {
+                    value = RandomUtils.nextFloat(360, 370);
+                }
+
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
-                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
-                        RandomUtils.nextFloat(60, 100));
+                        -1 * RandomUtils.nextFloat((float) 122.3386317, (float) 122.509851),
+                        value);
             }
             else
             {
+                float value = 0;
+                if(m_nSensorType == "Temperature") {
+                    value = RandomUtils.nextFloat(12, 18);
+                } else if (m_nSensorType == "Noise") {
+                    value = RandomUtils.nextFloat(40, 100);
+                } else if (m_nSensorType == "Co2") {
+                    value = RandomUtils.nextFloat(370, 400);
+                }
+
                 msg = String.format("%s %s %s %f %f %f",
                         m_nSensorType,
                         RandomStringUtils.randomAlphanumeric(10),
                         "" + (cal.getTimeInMillis() / 1000),
                         RandomUtils.nextFloat((float) 37.704009, (float) 37.8408570),
-                        RandomUtils.nextFloat((float) -122.509851, (float) -122.3386317),
-                        RandomUtils.nextFloat(0, 100));
+                        -1 * RandomUtils.nextFloat((float) 122.3386317, (float) 122.509851),
+                        RandomUtils.nextFloat(40, 70));
             }
 
             String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
@@ -82,6 +108,15 @@ public class SensorDataProducer implements Runnable {
             producer.send(data);
 
             System.out.println("Sent: " + msg);
+
+
+            try {
+
+                Thread.sleep(1000);
+
+            } catch (Exception e) {
+                System.out.println(e.getStackTrace());
+            }
         }
 
         producer.close();

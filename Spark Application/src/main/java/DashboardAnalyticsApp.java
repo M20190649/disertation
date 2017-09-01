@@ -101,9 +101,28 @@ public class DashboardAnalyticsApp {
 
     SparkConf conf = new SparkConf().setAppName("Dashboard Analytics App");
 
-    //TrafficProcessing();
+    if(args.length > 0) {
+      String analyticsApp = args[0];
 
-    SensorDataProcessing(conf, "Temperature");
+      if(analyticsApp == "Temperature") {
+        SensorDataProcessing(conf, "Temperature");
+      } else if(analyticsApp == "Noise") {
+        SensorDataProcessing(conf, "Noise");
+      } else if(analyticsApp == "Co2") {
+        SensorDataProcessing(conf, "Co2");
+      } else if (analyticsApp == "Traffic") {
+        TrafficProcessing();
+      }
+
+    } else {
+      // default - process all events
+      SensorDataProcessing(conf, "Temperature");
+      SensorDataProcessing(conf, "Noise");
+      SensorDataProcessing(conf, "Co2");
+      TrafficProcessing();
+    }
+
+
   }
 
   static void SensorDataProcessing(SparkConf conf, String sensorType) {

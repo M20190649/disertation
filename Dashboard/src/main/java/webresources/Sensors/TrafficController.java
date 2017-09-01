@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/traffic")
-public class Traffic {
+public class TrafficController {
 
     private static final double refLat = 37.704009;
     private static final double refLong = -122.509851;
@@ -54,7 +54,7 @@ public class Traffic {
     @RequestMapping(value = "/aggregates", method = RequestMethod.GET)
     public ResponseEntity<?> averageVelocities(@RequestParam Map<String, String> queryParams) {
 
-        MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );
+        MongoClient mongo = new MongoClient( Config.mongoIp , 27017 );
         DB db = mongo.getDB("DashboardAnalyticsDatabase");
         DBCollection collection = db.getCollection("Traffic_Aggregates");
 
@@ -74,29 +74,6 @@ public class Traffic {
         try {
             while(cursor.hasNext()) {
                 BasicDBObject obj = (BasicDBObject) cursor.next();
-                int tileX = Integer.parseInt(obj.getString("key").split(":")[0]);
-                int tileY = Integer.parseInt(obj.getString("key").split(":")[1]);
-
-     /*           GeodeticCalculator calc = new GeodeticCalculator();
-
-                // Get left lower corner of tile
-                calc.setStartingGeographicPoint(refLong, refLat);
-                calc.setDirection(0, tileY * tileSize);
-                Point2D t1 = calc.getDestinationGeographicPoint();
-
-                calc.setStartingGeographicPoint(t1);
-                calc.setDirection(90, tileX * tileSize);
-                Point2D llCorner = calc.getDestinationGeographicPoint();
-
-
-                calc.setStartingGeographicPoint(llCorner);
-                calc.setDirection(90, tileSize / 2);
-                Point2D center = calc.getDestinationGeographicPoint();
-
-                // Get left upper corner of tile
-                calc.setStartingGeographicPoint(center);
-                calc.setDirection(0, tileSize / 2);
-                center = calc.getDestinationGeographicPoint();*/
 
                 Point2D center =  new Point2D.Double(obj.getDouble("averagePositionX"), obj.getDouble("averagePositionY"));
 
@@ -122,8 +99,10 @@ public class Traffic {
             }
         } finally {
             cursor.close();
+            mongo.close();
         }
 
+        mongo.close();
 
         return new ResponseEntity<>(results, HttpStatus.OK);
     }
@@ -131,7 +110,7 @@ public class Traffic {
     @RequestMapping(value = "/taxiactionclusters", method = RequestMethod.GET)
     public ResponseEntity<?> pickupClusters(@RequestParam Map<String, String> queryParams) {
 
-        MongoClient mongo = new MongoClient( "34.233.214.65" , 27017 );
+        MongoClient mongo = new MongoClient( Config.mongoIp , 27017 );
         DB db = mongo.getDB("DashboardAnalyticsDatabase");
         DBCollection collection = db.getCollection("Traffic_Clusters_KMeans");
 
@@ -163,8 +142,10 @@ public class Traffic {
             }
         } finally {
             cursor.close();
+            mongo.close();
         }
 
+        mongo.close();
 
         return new ResponseEntity<>(results, HttpStatus.OK);
     }

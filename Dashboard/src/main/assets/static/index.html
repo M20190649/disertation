@@ -111,6 +111,9 @@
 
         var placedModalMarker = null;
 
+        window.timerId = [];
+        window.timerId["temperature"] = [];
+
         var user = $.parseJSON(storage['user']);
         var user_location;
 
@@ -239,7 +242,7 @@
 		    	modalLng = location.latLng.lng();
 
                 var image = {
-                    url: 'images/snowCar.png',
+                    url: '/images/current.png',
                     origin: new google.maps.Point(0, 0),
                     anchor: new google.maps.Point(25, 25),
                     scaledSize: new google.maps.Size(50, 50)
@@ -328,192 +331,205 @@
 
             init_jquery();
 
-            // Analytics
-        /*    window.timerId1 = setInterval(function() {
-                var request = $.ajax({
-                    url: config.uri + "/noise/latestAggregate",
-                    type: "GET",
-                    connection: "keep-alive",
-                    headers: {"Authorization": config.accessToken},
-                    contentType: "application/json",
-                    dataType: "json",
-                    cache: false
-                });
-
-                request.done(function(aggregate) {
-                    var average = aggregate.average;
-                    var min = aggregate.min;
-                    var max = aggregate.max;
-                    var count = aggregate.count;
-
-                    $("#avgNoise").text(average.toFixed(2) + "db");
-                    $("#minNoise").text(min.toFixed(2) + "db");
-                    $("#maxNoise").text(max.toFixed(2) + "db");
-                    $("#speedNoise").text(count.toFixed(2));
-                });
-            }, 1000);
-
-            window.timerId2 = setInterval(function() {
-                var request = $.ajax({
-                    url: config.uri + "/noise/count",
-                    type: "GET",
-                    connection: "keep-alive",
-                    headers: {"Authorization": config.accessToken},
-                    contentType: "application/json",
-                    dataType: "json",
-                    cache: false
-                });
-
-                request.done(function(count) {
-                    $("#totalSample").text(count);
-                });
-            }, 1000);
-
-
-            function getGreenToRed(percent){
-                r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
-                g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
-                return '#' + r.toString(16) + g.toString(16) + '00';
-            }
-
-            var old_rectangles = [];
-            var displayTiles = function() {
-                var request = $.ajax({
-                    url: config.uri + "/noise/tiles",
-                    type: "GET",
-                    connection: "keep-alive",
-                    headers: {"Authorization": config.accessToken},
-                    contentType: "application/json",
-                    dataType: "json",
-                    cache: false
-                });
-
-                request.done(function(tiles) {
-                    console.log(tiles);
-
-                    for (var i = 0; i < old_rectangles.length; i++)
-                    {
-                        old_rectangles[i].setMap(null);
-                    }
-
-                    old_rectangles = [];
-
-                    for (var i = 0; i < tiles.length; i++) {
-                        var rectangle = new google.maps.Rectangle({
-                            strokeColor: getGreenToRed((tiles[i].avg/194) * 100),
-                            strokeOpacity: 0.4,
-                            strokeWeight: 2,
-                            fillColor: getGreenToRed((tiles[i].avg/194) * 100),
-                            fillOpacity: 0.15,
-                            map: map,
-                            bounds: {
-                                north: tiles[i].lat4,
-                                south: tiles[i].lat1,
-                                west: tiles[i].long1,
-                                east: tiles[i].long4
-                            }
-                        });
-
-                        old_rectangles.push(rectangle);
-                    }
-                });
-            }
-
-            displayTiles();
-            window.timerId3 = setInterval(displayTiles, 10000);
-*/
-
-            var old_arrows = [];
-            var oldHeatmap = null;
-            var allTrafficAggregates = [];
-            var drawTrafficAggregates = function() {
-                var request = $.ajax({
-                    url: config.uri + "/traffic/aggregates",
-                    type: "GET",
-                    connection: "keep-alive",
-                    headers: {"Authorization": config.accessToken},
-                    contentType: "application/json",
-                    dataType: "json",
-                    cache: false
-                });
-
-                request.done(function(trafficAggregates) {
-
-                    for(var i = 0; i < trafficAggregates.length; i++) {
-
-                        allTrafficAggregates[trafficAggregates[i]["key"]] = trafficAggregates[i];
-
-                        // erase old arrow
-                        if(old_arrows.hasOwnProperty(trafficAggregates[i]["key"])) {
-                            old_arrows[trafficAggregates[i]["key"]].setMap(null);
-                        }
-
-                        // Define a symbol using a predefined path (an arrow)
-                        // supplied by the Google Maps JavaScript API.
-                        var lineSymbol = {
-                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
-                        };
-
-                        // Create the polyline and add the symbol via the 'icons' property.
-                        var line = new google.maps.Polyline({
-                            path: [
-                                {lat: parseFloat(trafficAggregates[i].centerArrowX), lng: parseFloat(trafficAggregates[i].centerArrowY)},
-                                {lat: parseFloat(trafficAggregates[i].arrowHeadX), lng: parseFloat(trafficAggregates[i].arrowHeadY)}
-                            ],
-                            icons: [{
-                                icon: lineSymbol,
-                                offset: '100%',
-                            }],
-                            title: Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h",
-                            map: map
-                        });
-
-                        (function(title) {
-                            var infoWindow = new google.maps.InfoWindow();
-
-                            // Open the InfoWindow on mouseover:
-                            google.maps.event.addListener(line, 'mouseover', function(e) {
-                                infoWindow.setPosition(e.latLng);
-                                infoWindow.setContent(title);
-                                infoWindow.open(map);
-                            });
-
-                            // Close the InfoWindow on mouseout:
-                            google.maps.event.addListener(line, 'mouseout', function() {
-                                infoWindow.close();
-                            });
-                        })(Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h");
-
-                        // update arrow
-                        old_arrows[trafficAggregates[i]["key"]] = line;
-                    }
-
-                    var heatMapData = [];
-
-                    for(var key in allTrafficAggregates) {
-                        heatMapData.push({location: new google.maps.LatLng(allTrafficAggregates[key].averagePositionX, allTrafficAggregates[key].averagePositionY), weight: allTrafficAggregates[key].CountCarsForAverageVelocity * 10});
-                    }
-
-                    var heatmap = new google.maps.visualization.HeatmapLayer({
-                        data: heatMapData,
-                        radius: 25
+            displaySensorData = function(sensorType) {
+                var getLatestSensorAggregate = function(sensorType) {
+                    var request = $.ajax({
+                        url: config.uri + "/sensordata/" + sensorType + "/latestAggregate",
+                        type: "GET",
+                        connection: "keep-alive",
+                        headers: {"Authorization": config.accessToken},
+                        contentType: "application/json",
+                        dataType: "json",
+                        cache: false
                     });
 
-                    if(oldHeatmap != null) {
-                        oldHeatmap.setMap(null);
+                    var unitOfMeasure = "N/A"
+
+                    if(sensorType == "temperature") {
+                        unitOfMeasure = "&deg;C";
+                    } else if (sensorType == "noise") {
+                        unitOfMeasure = "dB";
+                    } else if (sensorType == "co2") {
+                        unitOfMeasure = "ppm";
                     }
 
-                    heatmap.setMap(map);
+                    request.done(function(aggregate) {
+                        var average = aggregate.average;
+                        var min = aggregate.min;
+                        var max = aggregate.max;
+                        var count = aggregate.count;
 
-                    oldHeatmap = heatmap;
+                        $("#avg" + sensorType).text(average.toFixed(2) + "db");
+                        $("#min" + sensorType).text(min.toFixed(2) + "db");
+                        $("#max" + sensorType).text(max.toFixed(2) + "db");
+                        $("#speedSamples" + sensorType).text(count.toFixed(2));
+                    });
+                };
 
-                });
-            };
+                 getLatestSensorAggregate(sensorType);
+                 window.timerId[sensorType][0] = setInterval(function() {
+                    getLatestSensorAggregate(sensorType);
+                 }, 1000);
 
-            drawTrafficAggregates();
-            window.timerId4 = setInterval(drawTrafficAggregates, 10000);
+                function getGreenToRed(percent){
+                    r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+                    g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
+                    return '#' + r.toString(16) + g.toString(16) + '00';
+                }
 
+
+                allTiles = [];
+                allTiles["temperature"] = [];
+
+                var drawSensorRectangles = function(sensorType) {
+                    var request = $.ajax({
+                        url: config.uri + "/sensordata/" + sensorType + "/tiles",
+                        type: "GET",
+                        connection: "keep-alive",
+                        headers: {"Authorization": config.accessToken},
+                        contentType: "application/json",
+                        dataType: "json",
+                        cache: false
+                    });
+
+                    request.done(function(tiles) {
+
+                        for (var i = 0; i < tiles.length; i++) {
+                            var rectangle = new google.maps.Rectangle({
+                                strokeColor: getGreenToRed((tiles[i].avg/194) * 100),
+                                strokeOpacity: 0.4,
+                                strokeWeight: 2,
+                                fillColor: getGreenToRed((tiles[i].avg/194) * 100),
+                                fillOpacity: 0.15,
+                                map: map,
+                                bounds: {
+                                    north: tiles[i].lat4,
+                                    south: tiles[i].lat1,
+                                    west: tiles[i].long1,
+                                    east: tiles[i].long4
+                                }
+                            });
+
+                            // erase old value;
+                            if(allTiles[sensorType].hasOwnProperty(tiles[i]["tileKey"])) {
+                                allTiles[sensorType][tiles[i]["tileKey"]].setMap(null);
+                            }
+
+                            allTiles[sensorType][tiles[i]["tileKey"]] = rectangle;
+
+                        }
+                    });
+                }
+
+                drawSensorRectangles("temperature");
+                window.timerId[sensorType][1] = setInterval(function() {
+                    drawSensorRectangles("temperature");
+                }, 10000);
+
+            }
         }
+
+        hideSensorData = function(sensorType) {
+            for(var key in allTiles[sensorType]) {
+                allTiles[sensorType][key].setMap(null);
+            }
+
+            clearInterval(window.timerId[sensorType][0]);
+            clearInterval(window.timerId[sensorType][1]);
+
+        };
+
+
+
+        old_arrows = [];
+        oldHeatmap = null;
+        allTrafficAggregates = [];
+        var drawTrafficAggregates = function() {
+            var request = $.ajax({
+                url: config.uri + "/traffic/aggregates",
+                type: "GET",
+                connection: "keep-alive",
+                headers: {"Authorization": config.accessToken},
+                contentType: "application/json",
+                dataType: "json",
+                cache: false
+            });
+
+            request.done(function(trafficAggregates) {
+
+                for(var i = 0; i < trafficAggregates.length; i++) {
+
+                    allTrafficAggregates[trafficAggregates[i]["key"]] = trafficAggregates[i];
+
+                    // erase old arrow
+                    if(old_arrows.hasOwnProperty(trafficAggregates[i]["key"])) {
+                        old_arrows[trafficAggregates[i]["key"]].setMap(null);
+                    }
+
+                    // Define a symbol using a predefined path (an arrow)
+                    // supplied by the Google Maps JavaScript API.
+                    var lineSymbol = {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
+                    };
+
+                    // Create the polyline and add the symbol via the 'icons' property.
+                    var line = new google.maps.Polyline({
+                        path: [
+                            {lat: parseFloat(trafficAggregates[i].centerArrowX), lng: parseFloat(trafficAggregates[i].centerArrowY)},
+                            {lat: parseFloat(trafficAggregates[i].arrowHeadX), lng: parseFloat(trafficAggregates[i].arrowHeadY)}
+                        ],
+                        icons: [{
+                            icon: lineSymbol,
+                            offset: '100%',
+                        }],
+                        title: Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h",
+                        map: map
+                    });
+
+                    (function(title) {
+                        var infoWindow = new google.maps.InfoWindow();
+
+                        // Open the InfoWindow on mouseover:
+                        google.maps.event.addListener(line, 'mouseover', function(e) {
+                            infoWindow.setPosition(e.latLng);
+                            infoWindow.setContent(title);
+                            infoWindow.open(map);
+                        });
+
+                        // Close the InfoWindow on mouseout:
+                        google.maps.event.addListener(line, 'mouseout', function() {
+                            infoWindow.close();
+                        });
+                    })(Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h");
+
+                    // update arrow
+                    old_arrows[trafficAggregates[i]["key"]] = line;
+                }
+
+                var heatMapData = [];
+
+                for(var key in allTrafficAggregates) {
+                    heatMapData.push({location: new google.maps.LatLng(allTrafficAggregates[key].averagePositionX, allTrafficAggregates[key].averagePositionY), weight: allTrafficAggregates[key].CountCarsForAverageVelocity * 10});
+                }
+
+                var heatmap = new google.maps.visualization.HeatmapLayer({
+                    data: heatMapData,
+                    radius: 25
+                });
+
+                if(oldHeatmap != null) {
+                    oldHeatmap.setMap(null);
+                }
+
+                heatmap.setMap(map);
+
+                oldHeatmap = heatmap;
+
+            });
+        };
+
+        drawTrafficAggregates();
+        window.timerIdTraffic = setInterval(drawTrafficAggregates, 10000);
 
         var old_taxi_action_clusters = [];
         old_taxi_action_clusters["pickups"] = [];
@@ -559,12 +575,12 @@
         };
 
         drawTaxiActionClusters("pickups");
-        window.timerId4 = setInterval(function() {
+        window.timerIdClusterPickups = setInterval(function() {
             drawTaxiActionClusters("pickups");
         }, 10000);
 
         drawTaxiActionClusters("dropoffs");
-        window.timerId4 = setInterval(function() {
+        window.timerIdClusterDropOffs = setInterval(function() {
             drawTaxiActionClusters("dropoffs");
         }, 10000);
 
@@ -618,15 +634,48 @@
                 debug: true
             });
 
-            $('.gradientButton').on('click', function(){
+            $("#temperatureButton").on('click', function(){
                 if($(this).hasClass("pressedButton")) {
                     $(this).css('-webkit-box-shadow', '');
                     $(this).removeClass('pressedButton');
+
+                    hideSensorData("temperature");
                 } else {
                     $(this).addClass('pressedButton');
                     $(this).css('-webkit-box-shadow', 'inset 0 0 0 1px #27496d,inset 0 5px 30px #193047');
+
+                    displaySensorData("temperature");
                 }
             });
+
+            $("#temperatureButton").on('click', function(){
+                if($(this).hasClass("pressedButton")) {
+                    $(this).css('-webkit-box-shadow', '');
+                    $(this).removeClass('pressedButton');
+
+                    hideSensorData("noise");
+                } else {
+                    $(this).addClass('pressedButton');
+                    $(this).css('-webkit-box-shadow', 'inset 0 0 0 1px #27496d,inset 0 5px 30px #193047');
+
+                    displaySensorData("noise");
+                }
+            });
+
+            $("#temperatureButton").on('click', function(){
+                if($(this).hasClass("pressedButton")) {
+                    $(this).css('-webkit-box-shadow', '');
+                    $(this).removeClass('pressedButton');
+
+                    hideSensorData("co2");
+                } else {
+                    $(this).addClass('pressedButton');
+                    $(this).css('-webkit-box-shadow', 'inset 0 0 0 1px #27496d,inset 0 5px 30px #193047');
+
+                    displaySensorData("co2");
+                }
+            });
+
         }
 
         angular.module('mainApp', [])
@@ -651,7 +700,7 @@
         <div class="navbar navbar-fixed-top" id="myNavbar">
             <div class="container-fluid">
                     <div class="navbar-header">
-                        <a class="navbar-brand" id="places"><b>My City Dashboard</b></a>
+                        <a class="navbar-brand" id="places"><b>City Dashboard</b></a>
                     </div>
 
                     <div class="navbar-collapse collapse">
@@ -780,8 +829,7 @@
                     <div>Average: <span id="avgTemperature"></span></div>
                     <div>Minimum: <span id="minTemperature"></span></div>
                     <div>Maximum: <span id="maxminTemperature"></span></div>
-                    <div>Samples/s ): <span id="speedSamplesTemperature"></span></div>
-                    <div>Total samples: <span id="totalSamplesTemperature"></span></div>
+                    <div>Samples/s : <span id="speedSamplesTemperature"></span></div>
                     <img src="/images/temperature.png"/>
                 </button >
 
@@ -790,8 +838,7 @@
                     <div>Average: <span id="avgNoise"></span></div>
                     <div>Minimum: <span id="minNoise"></span></div>
                     <div>Maximum: <span id="maxNoise"></span></div>
-                    <div>Samples/s ): <span id="speedSamplesNoise"></span></div>
-                    <div>Total samples: <span id="totalSamplesNoise"></span></div>
+                    <div>Samples/s : <span id="speedSamplesNoise"></span></div>
                     <img src="/images/noise.png"/>
                 </button >
 
@@ -800,16 +847,14 @@
                     <div>Average: <span id="avgCo2"></span></div>
                     <div>Minimum: <span id="minCo2"></span></div>
                     <div>Maximum: <span id="maxCo2"></span></div>
-                    <div>Samples/s ): <span id="speedSamplesCo2"></span></div>
-                    <div>Total samples: <span id="totalSamplesCo2"></span></div>
+                    <div>Samples/s : <span id="speedSamplesCo2"></span></div>
                     <img src="/images/co2.png"/>
                 </button >
 
                 <button id="trafficButton" class="col-md-2 gradientButton" style="margin-right: 5px;">
                     <div><span style="font-weight: bold;">Traffic</span></div>
                     <div>Average: <span id="avgSpeed"></span></div>
-                    <div>Samples/s ): <span id="speedSamplesTraffic"></span></div>
-                    <div>Total samples: <span id="totalSamplesTraffic"></span></div>
+                    <div>Samples/s : <span id="speedSamplesTraffic"></span></div>
                     <img src="/images/traffic.png"/>
                 </button >
 
@@ -830,13 +875,13 @@
                 <div class="col-sm-3 right-panel" style = " margin-top: -50px;">
 
                     <!-- Buttons-->
-                    <button type="button" class="btn btn-block btn-info btn-lg" data-toggle="modal" data-target="#locationModal">Create Location</button>
+                    <button type="button" class="btn btn-block btn-info btn-lg" data-toggle="modal" data-target="#locationModal">Create Event</button>
 
 
-                    <!-- Top Locations panel -->
+                    <!-- Top Events panel -->
                     <div style="height: 100%;" class="panel panel-default">
                         <div class="panel-heading ">
-                            <h3 class="panel-title"><b>Top Locations</b></h3>
+                            <h3 class="panel-title"><b>Top Events</b></h3>
                         </div>
                         <div ng-controller="topLocationsController" style=" height: 100%; overflow-y:auto;" class="panel-body">
                             <p ng-repeat="x in top_locations">
@@ -861,7 +906,7 @@
 
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h6 class="panel-title"><b>Locations near you</b></h6>
+                    <h6 class="panel-title"><b>Events near you</b></h6>
                 </div>
                 <div ng-controller="nearbyLocationsController" style=" height: 100px; overflow-y:auto !important;" class="	panel-body panel-height">
                     <p ng-repeat="x in nearby_locations"><a href="#" ng-click="$event.preventDefault();redirectToLocation(x.id, 'location.html')">{{ x.votes }}<span style="color:#FF0040;" class="glyphicon glyphicon-star"></span> {{ x.name }} </a></p>

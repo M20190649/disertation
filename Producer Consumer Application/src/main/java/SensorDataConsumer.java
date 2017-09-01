@@ -28,7 +28,7 @@ public class SensorDataConsumer implements Runnable {
 
             System.out.println("Thread " + m_threadNumber + "received : " + msg);
 
-            String[] parts = msg.split(";");
+            String[] parts = msg.split(" ");
 
             BasicDBObject doc = new BasicDBObject()
                     .append("evenType", parts[0])
@@ -40,6 +40,8 @@ public class SensorDataConsumer implements Runnable {
 
             collection.insert(doc);
         }
+
+        mongo.close();
 
         System.out.println("Shutting down Thread: " + m_threadNumber);
     }

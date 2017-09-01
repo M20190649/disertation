@@ -1,6 +1,8 @@
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.geotools.referencing.GeodeticCalculator;
 import scala.collection.immutable.Seq$;
 
@@ -28,6 +30,8 @@ public class TrafficTraceProducer implements Runnable {
     public void run() {
 
         System.out.println("Staring traffic producer");
+
+        Logger.getLogger("kafka").setLevel(Level.OFF);
 
         Properties props = new Properties();
         props.put("metadata.broker.list", Config.brokerList);
@@ -80,8 +84,8 @@ public class TrafficTraceProducer implements Runnable {
                 cal.set(Calendar.MINUTE,  time.getMinutes());
                 cal.set(Calendar.SECOND, time.getSeconds());
 
-                // use it to generate a new id based on day => we translate all car traces to the same day, basically generating new traces, so we need a new carId so traces don't overlap
-                int day = time.getDay() - cal.getTime().getDay();
+                // use it to generate a new id based on day and hour => we translate all car traces to the same hour, basically generating new traces, so we need a new carId so traces don't overlap
+                String carId = UUID.randomUUID().toString() + ":" + (time.getDay() - cal.getTime().getDay());
 
                 long translatedTimestamp = cal.getTimeInMillis(); // UTC epoch ?
 
@@ -146,7 +150,7 @@ public class TrafficTraceProducer implements Runnable {
 
                 previousOccupancy = occupancy;
 
-                TrafficObject trafficObject = new TrafficObject(UUID.randomUUID().toString() + ":" + day,
+                TrafficObject trafficObject = new TrafficObject(carId,
                         latitude,
                         longitude,
                         occupancy,
@@ -160,6 +164,15 @@ public class TrafficTraceProducer implements Runnable {
                 String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
                 KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
                 producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+                producer.send(data);
+
 
             }
         } catch (FileNotFoundException fne) {

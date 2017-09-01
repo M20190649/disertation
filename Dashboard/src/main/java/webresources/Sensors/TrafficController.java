@@ -49,7 +49,7 @@ public class TrafficController {
     }
 
     @RequestMapping(value = "/latestAggregate", method = RequestMethod.GET)
-    public ResponseEntity<?> latestAggregate(@PathVariable("sensorType") String sensorType, @RequestParam Map<String, String> queryParams) {
+    public ResponseEntity<?> latestAggregate(@RequestParam Map<String, String> queryParams) {
         ;
         MongoClient mongo = new MongoClient( Config.mongoIp , 27017 );
         DB db = mongo.getDB("DashboardAnalyticsDatabase");

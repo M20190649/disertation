@@ -386,9 +386,9 @@
 
 
                         var sensor = capitalizeFirstLetter(sensorType);
-                        $("#avg" + sensor).text(average.toFixed(2) + "db");
-                        $("#min" + sensor).text(min.toFixed(2) + "db");
-                        $("#max" + sensor).text(max.toFixed(2) + "db");
+                        $("#avg" + sensor).text(average.toFixed(2) + " " + unitOfMeasure);
+                        $("#min" + sensor).text(min.toFixed(2) + " " + unitOfMeasure);
+                        $("#max" + sensor).text(max.toFixed(2) + " " + unitOfMeasure);
                         $("#speedSamples" + sensor).text(sampleSpeed.toFixed(2));
 
                         window.objectIds[sensorType]["aggregate"] = aggregate["_id"];
@@ -651,7 +651,7 @@
 
 
                 var sensor = capitalizeFirstLetter(sensorType);
-                $("#avg" + sensor).text(average.toFixed(2) + "db");
+                $("#avg" + sensor).text(average.toFixed(2) + " " + unitOfMeasure);
                 $("#speedSamples" + sensor).text(sampleSpeed.toFixed(2));
 
                 window.objectIds[sensorType]["aggregate"] = aggregate["_id"];
@@ -660,9 +660,9 @@
             });
         };
 
-        getLatestTrafficAggregate(sensorType);
+        getLatestTrafficAggregate("traffic");
         window.timerIdOverallTrafficAggregate = setInterval(function() {
-            getLatestTrafficAggregate(sensorType);
+            getLatestTrafficAggregate("traffic");
         }, 11000);
 
         function init_jquery() {
@@ -756,6 +756,7 @@
                     displaySensorData("co2");
                 }
             });
+
 
         }
 
@@ -934,7 +935,7 @@
 
                 <button id="trafficButton" class="col-md-2 gradientButton" style="margin-right: 5px;">
                     <div><span style="font-weight: bold;">Traffic</span></div>
-                    <div>Average: <span id="avgSpeed"></span></div>
+                    <div>Average: <span id="avgTraffic"></span></div>
                     <div>Samples/s : <span id="speedSamplesTraffic"></span></div>
                     <img src="/images/traffic.png"/>
                 </button >

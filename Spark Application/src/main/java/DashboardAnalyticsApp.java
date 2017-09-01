@@ -199,10 +199,10 @@ public class DashboardAnalyticsApp {
     TilesMongoConfig.put("splitKey", "key");
     TilesMongoConfig.put("splitKeyType", "string");
 
-    final Map AggregatesMongoConfig = new HashMap();
-    AggregatesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
-    AggregatesMongoConfig.put("database", "DashboardAnalyticsDatabase");
-    AggregatesMongoConfig.put("collection", "Traffic_Aggregates");
+    final Map OverallAggregatesMongoConfig = new HashMap();
+    OverallAggregatesMongoConfig.put("host", config.mongoDatabaseHost + ":" + config.mongoDatabasePort);
+    OverallAggregatesMongoConfig.put("database", "DashboardAnalyticsDatabase");
+    OverallAggregatesMongoConfig.put("collection", "Traffic_Overall_Aggregates");
 
 
     Map<String, Integer> topicMap = new HashMap<String, Integer>();
@@ -216,7 +216,7 @@ public class DashboardAnalyticsApp {
 
     JavaDStream<Double> samples = GetTrafficSampleValues(messages);
 
-    ComputeOveralTrafficStatisticsAndWriteToMongo(samples, AggregatesMongoConfig);
+    ComputeOveralTrafficStatisticsAndWriteToMongo(samples, OverallAggregatesMongoConfig);
 
     // key = tileIdX + ":" + tileIdY;
     JavaPairDStream<String, Tuple3<Point2d, Vector2d, Integer>> perTileAggregationOfTraffic = messages.mapToPair(new PairFunction<Tuple2<String, String>, String, Tuple3<Point2d, Vector2d, Integer>>() {

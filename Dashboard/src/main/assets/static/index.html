@@ -563,7 +563,7 @@
         };
 
         drawTrafficAggregates();
-        window.timerIdTraffic = setInterval(drawTrafficAggregates, 10000);
+        window.timerIdTrafficAggregates = setInterval(drawTrafficAggregates, 10000);
 
         var old_taxi_action_clusters = [];
         old_taxi_action_clusters["pickups"] = [];
@@ -617,6 +617,53 @@
         window.timerIdClusterDropOffs = setInterval(function() {
             drawTaxiActionClusters("dropoffs");
         }, 10000);
+
+
+        var getLatestTrafficAggregate = function(sensorType) {
+            var request = $.ajax({
+                url: config.uri + "/" + sensorType + "/latestAggregate",
+                type: "GET",
+                connection: "keep-alive",
+                headers: {"Authorization": config.accessToken},
+                contentType: "application/json",
+                dataType: "json",
+                cache: false
+            });
+
+            var unitOfMeasure = "km/h";
+
+            function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
+            }
+
+            request.done(function(aggregate) {
+
+                var average = aggregate.average;
+                var count = aggregate.count;
+
+                var sampleSpeed = 0;
+                if(sensorType in lastSampleCount && "aggregate" in window.objectIds[sensorType]) {
+                    var lastTimestamp = window.objectIds[sensorType]["aggregate"]["timestamp"];
+                    var currentTimestamp = aggregate["_id"]["timestamp"];
+
+                    sampleSpeed = count / (currentTimestamp - lastTimestamp);
+                }
+
+
+                var sensor = capitalizeFirstLetter(sensorType);
+                $("#avg" + sensor).text(average.toFixed(2) + "db");
+                $("#speedSamples" + sensor).text(sampleSpeed.toFixed(2));
+
+                window.objectIds[sensorType]["aggregate"] = aggregate["_id"];
+                lastSampleCount[sensorType] = count;
+
+            });
+        };
+
+        getLatestTrafficAggregate(sensorType);
+        window.timerIdOverallTrafficAggregate = setInterval(function() {
+            getLatestTrafficAggregate(sensorType);
+        }, 11000);
 
         function init_jquery() {
             $('#location-query').typeahead({

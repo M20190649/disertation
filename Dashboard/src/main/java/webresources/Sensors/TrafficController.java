@@ -6,10 +6,8 @@ import com.mongodb.*;
 import org.geotools.referencing.GeodeticCalculator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
@@ -48,6 +46,25 @@ public class TrafficController {
         public int getValue() {
             return value;
         }
+    }
+
+    @RequestMapping(value = "/latestAggregate", method = RequestMethod.GET)
+    public ResponseEntity<?> latestAggregate(@PathVariable("sensorType") String sensorType, @RequestParam Map<String, String> queryParams) {
+        ;
+        MongoClient mongo = new MongoClient( Config.mongoIp , 27017 );
+        DB db = mongo.getDB("DashboardAnalyticsDatabase");
+        DBCollection collection = db.getCollection("Traffic_Overall_Aggregates");
+
+        BasicDBObject order = new BasicDBObject();
+        order.append("_id", -1);
+
+        DBCursor cursor  = collection.find().sort(order);
+
+        DBObject latestAggregate = cursor.next();
+
+        mongo.close();
+
+        return new ResponseEntity<>(latestAggregate, HttpStatus.OK);
     }
 
 

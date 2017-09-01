@@ -49,11 +49,11 @@ public class SensorDataProducer implements Runnable {
 
                 float value = 0;
 
-                if(m_nSensorType == "Temperature") {
+                if(m_nSensorType.equals("Temperature")) {
                     value = RandomUtils.nextFloat(20, 22);
-                } else if (m_nSensorType == "Noise") {
+                } else if (m_nSensorType.equals("Noise")) {
                     value = RandomUtils.nextFloat(100, 140);
-                } else if (m_nSensorType == "Co2") {
+                } else if (m_nSensorType.equals("Co2")) {
                     value = RandomUtils.nextFloat(400, 410);
                 }
 
@@ -67,11 +67,11 @@ public class SensorDataProducer implements Runnable {
             } else if(nEvents % 200 == 0) {
 
                 float value = 0;
-                if(m_nSensorType == "Temperature") {
+                if(m_nSensorType.equals("Temperature")) {
                     value = RandomUtils.nextFloat(8, 12);
-                } else if (m_nSensorType == "Noise") {
+                } else if (m_nSensorType.equals("Noise")) {
                     value = RandomUtils.nextFloat(0, 40);
-                } else if (m_nSensorType == "Co2") {
+                } else if (m_nSensorType.equals("Co2")) {
                     value = RandomUtils.nextFloat(360, 370);
                 }
 
@@ -86,11 +86,11 @@ public class SensorDataProducer implements Runnable {
             else
             {
                 float value = 0;
-                if(m_nSensorType == "Temperature") {
+                if(m_nSensorType.equals("Temperature")) {
                     value = RandomUtils.nextFloat(12, 18);
-                } else if (m_nSensorType == "Noise") {
+                } else if (m_nSensorType.equals("Noise")) {
                     value = RandomUtils.nextFloat(40, 100);
-                } else if (m_nSensorType == "Co2") {
+                } else if (m_nSensorType.equals("Co2")) {
                     value = RandomUtils.nextFloat(370, 400);
                 }
 

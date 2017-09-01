@@ -104,13 +104,13 @@ public class DashboardAnalyticsApp {
     if(args.length > 0) {
       String analyticsApp = args[0];
 
-      if(analyticsApp == "Temperature") {
+      if(analyticsApp.equals("Temperature")) {
         SensorDataProcessing(conf, "Temperature");
-      } else if(analyticsApp == "Noise") {
+      } else if(analyticsApp.equals("Noise")) {
         SensorDataProcessing(conf, "Noise");
-      } else if(analyticsApp == "Co2") {
+      } else if(analyticsApp.equals("Co2")) {
         SensorDataProcessing(conf, "Co2");
-      } else if (analyticsApp == "Traffic") {
+      } else if (analyticsApp.equals("Traffic")) {
         TrafficProcessing();
       }
 

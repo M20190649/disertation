@@ -19,7 +19,7 @@ public class Main {
         }
 
         if(args.length >= 3) {
-            sourceFolder = args[2];
+            runtimeMillis = Long.parseLong(args[2]);
         }
 
         if(args.length >= 4) {

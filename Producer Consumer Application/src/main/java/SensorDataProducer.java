@@ -47,7 +47,7 @@ public class SensorDataProducer implements Runnable {
         props.put("metadata.broker.list", Config.brokerList);
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "SimplePartitioner");
-        props.put("request.required.acks", "1");
+        props.put("request.required.acks", "0");
 
 
         ProducerConfig config = new ProducerConfig(props);
@@ -124,12 +124,7 @@ public class SensorDataProducer implements Runnable {
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(m_nSensorType, partitioningKey, msg);
             producer.send(data);
 
-
-            if(SensorDataProducer.samplesSent.incrementAndGet() > totalSamplesToSend) {
-                producer.close();
-
-                return;
-            };
+            SensorDataProducer.samplesSent.incrementAndGet();
 
             if(System.currentTimeMillis() - testStartTime > testDuration) {
                 producer.close();

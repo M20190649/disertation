@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 // format of input file -> 37.75134 -122.39488 0 1213084687
@@ -23,13 +24,28 @@ public class TrafficTraceProducer implements Runnable {
 
     final static String eventSource = "SanFranciscoTraces";
 
-    public TrafficTraceProducer(String a_nFileLocation) {
+    volatile static int totalSamplesToSend;
+
+    public static AtomicInteger samplesSent;
+
+    public static AtomicInteger previousSentSamples;
+
+    final double samplesPerSecound;
+
+    long testStartTime;
+
+    long testDuration;
+
+    public TrafficTraceProducer(String a_nFileLocation, double samplesPerSecound, long testStartTime, long testDuration) {
         m_nFileLocation = a_nFileLocation;
+        this.samplesPerSecound = samplesPerSecound;
+        this.testStartTime = testStartTime;
+        this.testDuration = testDuration;
     }
 
     public void run() {
 
-        System.out.println("Staring traffic producer");
+        //System.out.println("Staring traffic producer");
 
         Logger.getLogger("kafka").setLevel(Level.OFF);
 
@@ -66,8 +82,8 @@ public class TrafficTraceProducer implements Runnable {
 
             int currentDay = new java.util.Date().getDay();
 
-
             for(String line2: lines) {
+
                 String[] parts = line2.split(" ");
 
                 double latitude = Double.parseDouble(parts[0]);
@@ -100,10 +116,10 @@ public class TrafficTraceProducer implements Runnable {
 
                 try {
                     if(previousTimeStamp != 0) {
-                        Thread.sleep(translatedTimestamp - previousTimeStamp);
+                        // Thread.sleep(translatedTimestamp - previousTimeStamp);
                     }
                 } catch (Exception e) {
-                    System.out.println(e.getStackTrace());
+                    e.printStackTrace();
                 }
 
                 if(previousLat != 0 && previousLong != 0) {
@@ -161,18 +177,33 @@ public class TrafficTraceProducer implements Runnable {
 
                 String message = eventType + " " + eventSource + " " + trafficObject;
 
-                String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
-                KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
-                producer.send(data);
+                for(int i = 0; i <= 1000; i++) {
+                   /* if(TrafficTraceProducer.previousSentSamples.get() != 0 && (TrafficTraceProducer.samplesSent.get() - TrafficTraceProducer.previousSentSamples.get()) > samplesPerSecound) {
+                        // sleep so we don't use up the processor.
+                        try {
+                                Thread.sleep(1);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
 
+                        continue;
+                    }*/
+
+                    String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
+                    KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
+                    producer.send(data);
+
+                    if(TrafficTraceProducer.samplesSent.incrementAndGet() > totalSamplesToSend) {
+                        producer.close();
+
+                        return;
+                    };
+
+                    if(System.currentTimeMillis() - testStartTime > testDuration) {
+                        producer.close();
+                        return;
+                    }
+                }
 
             }
         } catch (FileNotFoundException fne) {

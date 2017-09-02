@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -18,16 +19,27 @@ public class SensorDataProducer implements Runnable {
     private int m_nEvents;
     private String m_nSensorType;
 
-    public SensorDataProducer(int a_nEvents, String a_nSensorType) {
-        m_nEvents = a_nEvents;
+
+    volatile static int totalSamplesToSend;
+
+    public static AtomicInteger samplesSent;
+
+    public static AtomicInteger previousSentSamples;
+
+    long testStartTime;
+
+    long testDuration;
+
+    public SensorDataProducer(String a_nSensorType, long testStartTime, long testDuration) {
+        this.testStartTime = testStartTime;
+        this.testDuration = testDuration;
+
         m_nSensorType = a_nSensorType;
     }
 
     public void run() {
         long events = m_nEvents;
         Random rnd = new Random();
-
-        System.out.println("Staring producer with: " + events);
 
         Logger.getLogger("kafka").setLevel(Level.OFF);
 
@@ -37,15 +49,16 @@ public class SensorDataProducer implements Runnable {
         props.put("partitioner.class", "SimplePartitioner");
         props.put("request.required.acks", "1");
 
-        System.out.println("Staring producer with: " + events);
 
         ProducerConfig config = new ProducerConfig(props);
 
         Producer<String, String> producer = new Producer<String, String>(config);
 
-        System.out.println("Staring producer with: " + events);
 
-        for (long nEvents = 0; nEvents < events; nEvents++) {
+        int nEvents = 0;
+        while(true) {
+            nEvents++;
+
             Calendar cal = Calendar.getInstance();
 
             String msg;
@@ -111,18 +124,18 @@ public class SensorDataProducer implements Runnable {
             KeyedMessage<String, String> data = new KeyedMessage<String, String>(m_nSensorType, partitioningKey, msg);
             producer.send(data);
 
-            //System.out.println("Sent: " + msg);
 
+            if(SensorDataProducer.samplesSent.incrementAndGet() > totalSamplesToSend) {
+                producer.close();
 
-/*            try {
+                return;
+            };
 
-                Thread.sleep(1000);
-
-            } catch (Exception e) {
-                System.out.println(e.getStackTrace());
-            }*/
+            if(System.currentTimeMillis() - testStartTime > testDuration) {
+                producer.close();
+                return;
+            }
         }
 
-        producer.close();
     }
 }

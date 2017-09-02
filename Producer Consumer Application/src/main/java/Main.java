@@ -9,27 +9,38 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
-        int threads = 1;
 
         String sourceFolder = "C:/Users/unknown/Desktop/rawdata/traces/sanfranciscocabs";
 
+        String sensorType = "Temperature";
+        long runtimeMillis = 60000;
         if(args.length >= 2) {
-            sourceFolder = args[1];
+            sensorType = args[1];
         }
 
-        TrafficLoadGenerator.generate(sourceFolder);
-
-/*
-        int threadNumber = 1000;
-
-        for(int i = 0; i < threadNumber; i++) {
-            (new Thread(new SensorDataProducer(10000, "Temperature"))).start();
+        if(args.length >= 3) {
+            sourceFolder = args[2];
         }
-*/
 
+        if(args.length >= 4) {
+            sourceFolder = args[3];
+        }
 
-        //(new Thread(new SensorDataProducer(10000, "Noise"))).start();
-        //(new Thread(new SensorDataProducer(10000, "Co2"))).start();
+        if(sensorType == "Traffic") {
+            try {
+                // > 1000 samplesPerSecond recommend due to timming and synchronization issues
+                TrafficLoadGenerator.generate(sourceFolder, 10000, System.currentTimeMillis(), 60000, 60000);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            try {
+                SensorDataLoadGenerator.generate(sensorType,  runtimeMillis);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+        }
 
 
       /*  SensorDataConsumerGroup example = new SensorDataConsumerGroup(Config.zookeeper, "TemperatureGroup","Temperature");

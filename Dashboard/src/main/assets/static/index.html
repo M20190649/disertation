@@ -506,7 +506,7 @@
                         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
                     };
 
-                    // Create the polyline and add the symbol via the 'icons' property.
+                   /* // Create the polyline and add the symbol via the 'icons' property.
                     var line = new google.maps.Polyline({
                         path: [
                             {lat: parseFloat(trafficAggregates[i].centerArrowX), lng: parseFloat(trafficAggregates[i].centerArrowY)},
@@ -518,9 +518,9 @@
                         }],
                         title: Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h",
                         map: map
-                    });
+                    });*/
 
-                    (function(title) {
+                    /*(function(title) {
                         var infoWindow = new google.maps.InfoWindow();
 
                         // Open the InfoWindow on mouseover:
@@ -535,12 +535,12 @@
                             infoWindow.close();
                         });
                     })(Math.sqrt(Math.pow(trafficAggregates[i]["avgVelocityX"], 2) + Math.pow(trafficAggregates[i]["avgVelocityY"], 2)) + " km/h");
-
+*/
                     // update arrow
-                    old_arrows[trafficAggregates[i]["key"]] = line;
+                    //old_arrows[trafficAggregates[i]["key"]] = line;
                 }
 
-                var heatMapData = [];
+              /*  var heatMapData = [];
 
                 for(var key in allTrafficAggregates) {
                     heatMapData.push({location: new google.maps.LatLng(allTrafficAggregates[key].averagePositionX, allTrafficAggregates[key].averagePositionY), weight: allTrafficAggregates[key].CountCarsForAverageVelocity * 10});
@@ -558,12 +558,13 @@
                 heatmap.setMap(map);
 
                 oldHeatmap = heatmap;
-
+*/
             });
         };
 
         drawTrafficAggregates();
         window.timerIdTrafficAggregates = setInterval(drawTrafficAggregates, 10000);
+
 
         var old_taxi_action_clusters = [];
         old_taxi_action_clusters["pickups"] = [];
@@ -617,6 +618,7 @@
         window.timerIdClusterDropOffs = setInterval(function() {
             drawTaxiActionClusters("dropoffs");
         }, 10000);
+
 
 
         var getLatestTrafficAggregate = function(sensorType) {

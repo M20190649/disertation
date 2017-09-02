@@ -14,16 +14,16 @@ public class Main {
 
         String sensorType = "Temperature";
         long runtimeMillis = 60000;
+        if(args.length >= 1) {
+            sensorType = args[0];
+        }
+
         if(args.length >= 2) {
-            sensorType = args[1];
+            runtimeMillis = Long.parseLong(args[1]);
         }
 
         if(args.length >= 3) {
-            runtimeMillis = Long.parseLong(args[2]);
-        }
-
-        if(args.length >= 4) {
-            sourceFolder = args[3];
+            sourceFolder = args[2];
         }
 
         if(sensorType == "Traffic") {

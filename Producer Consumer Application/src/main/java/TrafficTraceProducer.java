@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 // format of input file -> 37.75134 -122.39488 0 1213084687
 public class TrafficTraceProducer implements Runnable {
-    private String m_nFileLocation;
+    private Vector<String> file;
 
     final static String trafficTopic = "traffic";
 
@@ -32,8 +32,8 @@ public class TrafficTraceProducer implements Runnable {
 
     long testDuration;
 
-    public TrafficTraceProducer(String a_nFileLocation, long testStartTime, long testDuration) {
-        m_nFileLocation = a_nFileLocation;
+    public TrafficTraceProducer(Vector<String> file, long testStartTime, long testDuration) {
+        this.file = file;
         this.testStartTime = testStartTime;
         this.testDuration = testDuration;
     }
@@ -58,15 +58,6 @@ public class TrafficTraceProducer implements Runnable {
         Producer<String, String> producer = new Producer<String, String>(config);
 
         try {
-            Vector<String> lines = new Vector<String>();
-            BufferedReader br = new BufferedReader(new FileReader(m_nFileLocation));
-
-            String line;
-            while ((line = br.readLine()) != null) {
-                lines.add(line);
-            }
-
-            Collections.reverse(lines);
 
             double velocityX = 0;
             double velocityY = 0;
@@ -78,7 +69,7 @@ public class TrafficTraceProducer implements Runnable {
 
             int currentDay = new java.util.Date().getDay();
 
-            for(String line2: lines) {
+            for(String line2: file) {
 
                 String[] parts = line2.split(" ");
 
@@ -112,7 +103,7 @@ public class TrafficTraceProducer implements Runnable {
 
                 try {
                     if(previousTimeStamp != 0) {
-                        // Thread.sleep(translatedTimestamp - previousTimeStamp);
+                        //Thread.sleep(Math.abs(translatedTimestamp - previousTimeStamp));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -173,7 +164,7 @@ public class TrafficTraceProducer implements Runnable {
 
                 String message = eventType + " " + eventSource + " " + trafficObject;
 
-                for(int i = 0; i <= 100; i++) {
+                for(int i = 0; i <= 10; i++) {
 
                     String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
                     KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
@@ -188,10 +179,8 @@ public class TrafficTraceProducer implements Runnable {
                 }
 
             }
-        } catch (FileNotFoundException fne) {
-            System.out.println("File Not Found" + fne.getStackTrace());
-        } catch (IOException ioe) {
-            System.out.println("IOException" + ioe.getStackTrace());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         producer.close();

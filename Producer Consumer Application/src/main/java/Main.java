@@ -13,7 +13,7 @@ public class Main {
         String sourceFolder = "C:/Users/unknown/Desktop/rawdata/traces/sanfranciscocabs";
 
         String sensorType = "Traffic";
-        long runtimeMillis = 6000;
+        long runtimeMillis = 15000;
         if(args.length >= 1) {
             sensorType = args[0];
         }
@@ -28,7 +28,6 @@ public class Main {
 
         if(sensorType == "Traffic") {
             try {
-                // > 1000 samplesPerSecond recommend due to timming and synchronization issues
                 TrafficLoadGenerator.generate(sourceFolder, runtimeMillis);
             } catch (Exception ex) {
                 ex.printStackTrace();

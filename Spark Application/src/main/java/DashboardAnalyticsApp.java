@@ -388,14 +388,14 @@ public class DashboardAnalyticsApp {
     jssc.stop();
   }
 
-  static void ClusterTaxiActions(JavaPairReceiverInputDStream<String, String> messages, final TaxiAction taxiAction, final JavaSparkContext sc) {
+  static void ClusterTaxiActions(JavaPairReceiverInputDStream<String, String> messages, final TaxiAction taxiActionArg, final JavaSparkContext sc) {
     JavaPairDStream<String, String> taxiPickups = messages.window(new Duration(60000), new Duration(10000)).filter(new Function<Tuple2<String, String>, Boolean>() {
       @Override
       public Boolean call(Tuple2<String, String> v1) throws Exception {
         String[] parts = v1._2().split(" ");
         TaxiAction taxiAction = TaxiAction.fromValue(Integer.parseInt(parts[8]));
 
-        return taxiAction == TaxiAction.Pickup;
+        return taxiAction == taxiActionArg;
       }
     });
 

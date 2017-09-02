@@ -10,10 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TrafficLoadGenerator {
 
     static void generate(String sourceFolderPath,
-                         double samplesPerSecond,
-                         long testStartTime,
-                         long testDuration,
-                         int totalSamplesToSend) {
+                         long testDuration) {
 
         System.out.println("Staring traffic load generation");
 
@@ -22,7 +19,6 @@ public class TrafficLoadGenerator {
 
         TrafficTraceProducer.samplesSent = new AtomicInteger(0);
         TrafficTraceProducer.previousSentSamples = new AtomicInteger(0);
-        TrafficTraceProducer.totalSamplesToSend = totalSamplesToSend;
         ArrayList<Thread> threadList = new ArrayList<Thread>();
 
         Timer t = new Timer( );
@@ -39,7 +35,7 @@ public class TrafficLoadGenerator {
         }, 0,1000);
 
         for (int i = 0; i < listOfFiles.length; i++) {
-            threadList.add(new Thread(new TrafficTraceProducer(listOfFiles[i].getAbsolutePath(), samplesPerSecond, testStartTime, testDuration)));
+            threadList.add(new Thread(new TrafficTraceProducer(listOfFiles[i].getAbsolutePath(), startTime, testDuration)));
         }
 
         for (int i = 0; i < listOfFiles.length; i++) {
@@ -57,7 +53,7 @@ public class TrafficLoadGenerator {
         t.cancel();
 
         System.out.println("Total samples sent:" + TrafficTraceProducer.samplesSent);
-        System.out.println("Ellapsed time: " + (startTime - System.currentTimeMillis()));
+        System.out.println("Ellapsed time: " + (System.currentTimeMillis() - startTime) / 60);
 
     }
 }

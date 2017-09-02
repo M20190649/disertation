@@ -110,3 +110,8 @@ sudo fuser -k Port 27017/tcp
 sudo iptables -t filter -A INPUT -p tcp -i eth0 -m tcp --sport 27017 -j DROP
 
 
+Clear kafka logs
+rm -R /tmp/kafka-logs 
+
+
+date && java -jar analytics-dashboard-0.1.0-jar-with-dependencies.jar Temperature 60000 && date

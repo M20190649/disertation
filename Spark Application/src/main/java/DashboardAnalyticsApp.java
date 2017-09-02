@@ -53,6 +53,8 @@ import javax.measure.quantity.Velocity;
 import javax.vecmath.Point2d;
 import javax.vecmath.Vector2d;
 
+import static org.apache.spark.api.java.StorageLevels.MEMORY_AND_DISK_SER;
+
 
 enum TaxiAction {
   Other(0),
@@ -211,8 +213,7 @@ public class DashboardAnalyticsApp {
     JavaPairReceiverInputDStream<String, String> messages =
             KafkaUtils.createStream(jssc, config.kafkaHost + ":" + config.kafkaPort, config.kafkaGroup, topicMap);
 
-    messages.cache(); // ? check if this stream is duplicated
-
+    messages.persist(MEMORY_AND_DISK_SER);
 
     JavaDStream<Double> samples = GetTrafficSampleValues(messages);
 

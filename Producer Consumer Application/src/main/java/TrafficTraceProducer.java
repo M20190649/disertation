@@ -24,21 +24,16 @@ public class TrafficTraceProducer implements Runnable {
 
     final static String eventSource = "SanFranciscoTraces";
 
-    volatile static int totalSamplesToSend;
-
     public static AtomicInteger samplesSent;
 
     public static AtomicInteger previousSentSamples;
-
-    final double samplesPerSecound;
 
     long testStartTime;
 
     long testDuration;
 
-    public TrafficTraceProducer(String a_nFileLocation, double samplesPerSecound, long testStartTime, long testDuration) {
+    public TrafficTraceProducer(String a_nFileLocation, long testStartTime, long testDuration) {
         m_nFileLocation = a_nFileLocation;
-        this.samplesPerSecound = samplesPerSecound;
         this.testStartTime = testStartTime;
         this.testDuration = testDuration;
     }
@@ -53,7 +48,8 @@ public class TrafficTraceProducer implements Runnable {
         props.put("metadata.broker.list", Config.brokerList);
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "SimplePartitioner");
-        props.put("request.required.acks", "1");
+        props.put("request.required.acks", "0");
+        props.put("producer.type", "async");
 
         Random rnd = new Random();
 
@@ -177,27 +173,13 @@ public class TrafficTraceProducer implements Runnable {
 
                 String message = eventType + " " + eventSource + " " + trafficObject;
 
-                for(int i = 0; i <= 1000; i++) {
-                   /* if(TrafficTraceProducer.previousSentSamples.get() != 0 && (TrafficTraceProducer.samplesSent.get() - TrafficTraceProducer.previousSentSamples.get()) > samplesPerSecound) {
-                        // sleep so we don't use up the processor.
-                        try {
-                                Thread.sleep(1);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                        continue;
-                    }*/
+                for(int i = 0; i <= 100; i++) {
 
                     String partitioningKey = "192.168.1." + rnd.nextInt(255); // we simulate IPs as partitioning keys;
                     KeyedMessage<String, String> data = new KeyedMessage<String, String>(trafficTopic, partitioningKey, message);
                     producer.send(data);
 
-                    if(TrafficTraceProducer.samplesSent.incrementAndGet() > totalSamplesToSend) {
-                        producer.close();
-
-                        return;
-                    };
+                    TrafficTraceProducer.samplesSent.incrementAndGet();
 
                     if(System.currentTimeMillis() - testStartTime > testDuration) {
                         producer.close();

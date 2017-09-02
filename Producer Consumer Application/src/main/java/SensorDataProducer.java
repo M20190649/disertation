@@ -48,6 +48,7 @@ public class SensorDataProducer implements Runnable {
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "SimplePartitioner");
         props.put("request.required.acks", "0");
+        props.put("producer.type", "async");
 
 
         ProducerConfig config = new ProducerConfig(props);

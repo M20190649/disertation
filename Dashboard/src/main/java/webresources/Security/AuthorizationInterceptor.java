@@ -29,17 +29,17 @@ public class AuthorizationInterceptor implements HandlerInterceptor  {
             throws Exception {
 
         if (((request.getServletPath().equals("/register.html") || request.getServletPath().equals("/login.html") )
-                && request.getMethod() == "GET")) {
+                && request.getMethod().equals("GET"))) {
             return true;
         }
 
       if ((request.getServletPath().equals("/users") || request.getServletPath().equals("/users/login"))
-                && request.getMethod() == "POST") {
+                && request.getMethod().equals("POST")) {
             return true;
         }
 
         if ((request.getServletPath().equals("/users") && request.getQueryString().startsWith("exists")
-                && request.getMethod() == "GET")) {
+                && request.getMethod().equals("GET"))) {
             return true;
         }
 

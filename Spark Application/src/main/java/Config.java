@@ -3,13 +3,11 @@
  */
 public final class Config {
 
-    String application = "Noise";
-
-    String mongoDatabaseHost = "34.233.214.65";
+    String mongoDatabaseHost = "34.194.206.163";
 
     int mongoDatabasePort = 27017;
 
-    String kafkaHost = "34.233.214.65";
+    String kafkaHost = "34.234.18.24";
 
     int kafkaPort = 2181;
 

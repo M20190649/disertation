@@ -378,8 +378,8 @@ public class DashboardAnalyticsApp {
     });
 
 
-    //ClusterTaxiActions(messages, TaxiAction.Pickup, sc);
-    //ClusterTaxiActions(messages, TaxiAction.Dropoff, sc);
+    ClusterTaxiActions(messages, TaxiAction.Pickup, sc);
+    ClusterTaxiActions(messages, TaxiAction.Dropoff, sc);
 
     jssc.start();
     // Wait for 10 seconds then exit. To run forever call without a timeout

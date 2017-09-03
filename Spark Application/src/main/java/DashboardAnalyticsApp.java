@@ -428,6 +428,15 @@ public class DashboardAnalyticsApp {
           // Cluster the data into two classes using KMeans
           int numClusters = 3;
           int numIterations = 20;
+
+
+          long count = rdd.count();
+
+          if(count < numClusters) {
+            return null;
+          }
+
+
           KMeansModel clusters = KMeans.train(rdd.rdd(), numClusters, numIterations);
 
 

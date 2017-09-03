@@ -26,7 +26,7 @@ public class Main {
             sourceFolder = args[2];
         }
 
-        if(sensorType == "Traffic") {
+        if(sensorType.equals("Traffic")) {
             try {
                 TrafficLoadGenerator.generate(sourceFolder, runtimeMillis);
             } catch (Exception ex) {

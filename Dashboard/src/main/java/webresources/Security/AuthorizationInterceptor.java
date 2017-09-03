@@ -28,7 +28,10 @@ public class AuthorizationInterceptor implements HandlerInterceptor  {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
 
-
+        if (((request.getServletPath().equals("/register.html") || request.getServletPath().equals("/login.html") )
+                && request.getMethod() == "GET")) {
+            return true;
+        }
 
       if ((request.getServletPath().equals("/users") || request.getServletPath().equals("/users/login"))
                 && request.getMethod() == "POST") {

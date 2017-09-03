@@ -83,8 +83,9 @@ https://github.com/bmwcarit/barefoot/wiki#parameters
 
 
 Submit app:
-./bin/spark-submit   --class DashboardAnalyticsApp --master spark://34.233.214.65:7077   --executor-memory 1G   --total-executor-cores 10 --verbose  "/home/ubuntu/Desktop/disertation/Spark Application/target/analytics-project-1.0-jar-with-dependencies.jar"
 
+// carefull with the toal-executor-cores - it's per cluster
+./bin/spark-submit   --class DashboardAnalyticsApp --master spark://34.233.214.65:7077  --driver-cores 2 --executor-memory 8G   --total-executor-cores 8 --verbose  "/home/ubuntu/Desktop/disertation/Spark Application/target/analytics-project-1.0-jar-with-dependencies.jar" Noise
 
 Postgres sql database name: Disertation; user: ubuntu; pass: 123 ?
 
@@ -109,9 +110,15 @@ Kill hanging mongo ports:
 sudo fuser -k Port 27017/tcp
 sudo iptables -t filter -A INPUT -p tcp -i eth0 -m tcp --sport 27017 -j DROP
 
-
+!!!! Always clear kafka logs before starting tests; it seems that it gets very slow otherwise
 Clear kafka logs
 rm -R /tmp/kafka-logs 
 
 
 date && java -jar analytics-dashboard-0.1.0-jar-with-dependencies.jar Temperature 60000 && date
+date && java -jar analytics-dashboard-0.1.0-jar-with-dependencies.jar Traffic 60000 ~/rawdata/traces/sanfranciscocabs && date
+
+start server agent  ~/Desktop/ServerAgent-2.2.1/startAgent.sh
+
+
+/home/ubuntu/Desktop/disertation/Dashboard/src/main/assets/
